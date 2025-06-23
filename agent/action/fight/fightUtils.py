@@ -743,3 +743,23 @@ def Auto_CallDog(context: Context):
         time.sleep(1)
         logger.info("狗子召唤成功！！！")
     return True
+
+
+def Saveyourlife(context: Context):
+    image = context.tasker.controller.post_screencap().wait().get()
+    TextRecoDetail = context.run_recognition(
+        "Fight_FindText",
+        image,
+        pipeline_override={
+            "Fight_FindText": {
+                "roi": [66, 563, 583, 446],
+                "expected": "复活",
+            }
+        },
+    )
+    logger.info("夭寿啦！！！检测到冈布奥倒下啦！")
+    if TextRecoDetail:
+        # 小SL, 保住狗命
+        context.run_task("LogoutGame")
+        context.run_task("ReturnMaze")
+    return True
