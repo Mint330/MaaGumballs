@@ -838,6 +838,7 @@ def PushOne(context: Context):
                 else:
                     logger.info("没有治疗术、寒冰护盾、吸能术，死亡波纹, 无法推序！")
                     return False
+<<<<<<< HEAD
     return True
 
 
@@ -869,6 +870,19 @@ def OpenNatureSwitch(isDefense: bool, context: Context):
             "JJC_OpenForceOfNature_Fail": {
                 "expected": [f"关闭{tempStr}"],
             },
+=======
+                  
+def Saveyourlife(context: Context):
+    image = context.tasker.controller.post_screencap().wait().get()
+    TextRecoDetail = context.run_recognition(
+        "Fight_FindRespawn",
+        image,
+        pipeline_override={
+            "Fight_FindRespawn": {
+                "roi": [66, 563, 583, 446],
+                "expected": "复活",
+            }
+>>>>>>> 4e7b6d9 (Update fightUtils.py)
         },
     )
 
