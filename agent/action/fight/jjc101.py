@@ -26,20 +26,27 @@ class JJC101(CustomAction):
         self.layers = 1
 
     def initialize(self, context: Context):
+        self.__init__()
+        logger.info("JJC101初始化完成")
         # 检查当前层数
         context.run_task("Fight_ReturnMainWindow")
         RunResult = context.run_task("Fight_CheckLayer")
         if RunResult.nodes:
-            self.layers = fightUtils.extract_numbers(
+            self.layers = fightUtils.extract_num_layer(
                 RunResult.nodes[0].recognition.best_result.text
             )
 
         # 进入地图初始化
         logger.info(f"当前层数: {self.layers}, 进入地图初始化")
         context.run_task("Bag_Open")
-        if not fightUtils.checkEquipment("头盔", 7, "斯巴达的头盔", context):
-            if fightUtils.findEquipment(7, "斯巴达的头盔", True, context):
-                self.isHaveSpartanHat = True
+        # 检查是否已装备斯巴达的头盔
+        has_helmet = fightUtils.checkEquipment("头盔", 7, "斯巴达的头盔", context)
+        if not has_helmet:
+            # 若未装备，则尝试寻找该头盔
+            found_helmet = fightUtils.findEquipment(7, "斯巴达的头盔", True, context)
+            self.isHaveSpartanHat = found_helmet
+        else:
+            self.isHaveSpartanHat = True
 
         if not fightUtils.findItem("东方剪纸", False, context):
             logger.info("未找到东方剪纸, 已经叫过狗了")
@@ -102,8 +109,8 @@ class JJC101(CustomAction):
         """
         if (self.layers == 1 or self.layers == 2) and self.isTitle_L1 == False:
             fightUtils.title_learn("冒险", 1, "寻宝者", 3, context)
-            fightUtils.title_learn("魔法", 1, "魔法学徒", 3, context)
-            fightUtils.title_learn("冒险", 2, "探险家", 2, context)
+            fightUtils.title_learn("冒险", 2, "探险家", 3, context)
+            fightUtils.title_learn("魔法", 1, "魔法学徒", 1, context)
             context.run_task("Fight_ReturnMainWindow")
             self.isTitle_L1 = True
         elif (self.layers == 27 or self.layers == 28) and self.isTitle_L27 == False:
@@ -132,7 +139,7 @@ class JJC101(CustomAction):
             self.isTitle_L27 = True
         elif (self.layers == 63 or self.layers == 64) and self.isTitle_L63 == False:
 
-            fightUtils.title_learn("冒险", 1, "寻宝者", 4, context)
+            fightUtils.title_learn("冒险", 1, "寻宝者", 1, context)
             fightUtils.title_learn("冒险", 2, "探险家", 1, context)
             fightUtils.title_learn("冒险", 3, "暗行者", 1, context)
             fightUtils.title_learn("冒险", 4, "魔盗", 1, context)
@@ -141,70 +148,64 @@ class JJC101(CustomAction):
             context.run_task("Fight_ReturnMainWindow")
             fightUtils.title_learn_branch("冒险", 5, "生命强化", 3, context)
             fightUtils.title_learn_branch("冒险", 5, "攻击强化", 3, context)
-            fightUtils.title_learn_branch("冒险", 5, "魔力强化", 3, context)
 
             fightUtils.title_learn_branch("魔法", 5, "魔力强化", 3, context)
             fightUtils.title_learn_branch("魔法", 5, "魔法强化", 3, context)
             self.isTitle_L63 = True
             context.run_task("Fight_ReturnMainWindow")
-        elif self.layers == 89:
-            fightUtils.title_learn("魔法", 1, "魔法学徒", 3, context)
-            fightUtils.title_learn("魔法", 2, "白袍法师", 3, context)
-            fightUtils.title_learn("魔法", 4, "气系大师", 3, context)
-            fightUtils.title_learn_branch("魔法", 5, "生命强化", 3, context)
-
-            context.run_task("Fight_ReturnMainWindow")
         return True
 
     def Check_DefaultStatus(self, context: Context):
-        # boos战前和战后操作
-        if not (self.layers >= 61 and self.layers <= 101):
-            return
-        if self.layers % 10 == 9 or self.layers % 10 == 1:
-            if self.layers % 10 == 9:
-                context.run_task(
-                    "JJC_OpenForceOfNature",
-                    pipeline_override={
-                        "JJC_OpenForceOfNature_Switch": {
-                            "expected": ["开启自然之力"],
-                        }
-                    },
-                )
-                logger.info("开启自然之力")
-            elif self.layers % 10 == 1:
-                context.run_task(
-                    "JJC_OpenForceOfNature",
-                    pipeline_override={
-                        "JJC_OpenForceOfNature_Switch": {
-                            "expected": ["开启自然守护"],
-                        }
-                    },
-                )
-                logger.info("开启自然守护")
 
+        # 检查冈布奥状态
+        tempNum = self.layers % 10
+        if (self.layers >= 55 and (tempNum == 1 or tempNum == 5 or tempNum == 9)) or (
+            self.layers >= 90 and tempNum == 4
+        ):
             StatusDetail: dict = fightUtils.checkGumballsStatusV2(context)
-            HPStatus = float(StatusDetail["当前生命值"]) / float(
-                StatusDetail["最大生命值"]
-            )
-            if HPStatus <= 0.8:
-                logger.info("当前生命值小于80%，使用治疗")
-                for _ in range(2):
+            CurrentHP = float(StatusDetail["当前生命值"])
+            MaxHp = float(StatusDetail["最大生命值"])
+            HPStatus = CurrentHP / MaxHp
+
+            if HPStatus < 0.8:
+                while HPStatus < 0.8:
                     if not fightUtils.cast_magic("光", "神恩术", context):
-                        fightUtils.cast_magic("水", "治疗术", context)
-            elif HPStatus <= 0.6:
-                logger.info("当前生命值小于60%，使用治疗")
-                fightUtils.cast_magic("气", "静电术", context)
-                for _ in range(5):
-                    if not fightUtils.cast_magic("光", "神恩术", context):
-                        fightUtils.cast_magic("水", "治疗术", context)
+                        if not fightUtils.cast_magic("水", "治疗术", context):
+                            if not fightUtils.cast_magic("水", "治愈术", context):
+                                logger.info("没有任何治疗方法了= =")
+                                break
+                    context.run_task("Fight_ReturnMainWindow")
+                    StatusDetail: dict = fightUtils.checkGumballsStatusV2(context)
+                    CurrentHP = float(StatusDetail["当前生命值"])
+                    MaxHp = float(StatusDetail["最大生命值"])
+                    HPStatus = CurrentHP / MaxHp
+                    logger.info(f"current hp is {CurrentHP}, HPStatus is {HPStatus}")
             else:
-                logger.info("当前生命值大于70%，不使用治疗")
+                logger.info("当前生命值大于80%，不使用治疗")
+
+        if tempNum == 9 and self.layers >= 61 and self.layers <= 90:
+            context.run_task(
+                "JJC_OpenForceOfNature",
+                pipeline_override={
+                    "JJC_OpenForceOfNature_Switch": {
+                        "expected": ["开启自然之力"],
+                    }
+                },
+            )
+            logger.info("开启自然之力")
+        elif tempNum == 1 and self.layers >= 61 and self.layers <= 90:
+            context.run_task(
+                "JJC_OpenForceOfNature",
+                pipeline_override={
+                    "JJC_OpenForceOfNature_Switch": {
+                        "expected": ["开启自然守护"],
+                    }
+                },
+            )
+            logger.info("开启自然守护")
 
         # 保命
-        if (
-            self.layers == 89
-            and fightUtils.checkBuffStatus("神圣重生", context) != True
-        ):
+        if self.layers == 89 and not fightUtils.checkBuffStatus("神圣重生", context):
             fightUtils.cast_magic("光", "神圣重生", context)
 
         return True
@@ -222,29 +223,32 @@ class JJC101(CustomAction):
                 for _ in range(3):
                     fightUtils.cast_magic_special("天眼", context)
 
-            elif self.layers <= 55:
-                fightUtils.cast_magic("火", "失明术", context, (boss_x, boss_y))
+            elif self.layers <= 45:
+                if not fightUtils.cast_magic("火", "失明术", context, (boss_x, boss_y)):
+                    fightUtils.cast_magic("暗", "诅咒术", context, (boss_x, boss_y))
                 for _ in range(3):
                     if not fightUtils.cast_magic("光", "祝福术", context):
                         if not fightUtils.cast_magic("水", "治疗术", context):
                             fightUtils.cast_magic("土", "石肤术", context)
 
+            elif self.layers <= 55:
+                if not fightUtils.cast_magic("火", "失明术", context, (boss_x, boss_y)):
+                    fightUtils.cast_magic("暗", "诅咒术", context, (boss_x, boss_y))
+                for _ in range(3):
+                    if not fightUtils.cast_magic("水", "寒冰护盾", context):
+                        if not fightUtils.cast_magic("水", "治疗术", context):
+                            fightUtils.cast_magic("土", "石肤术", context)
+
             elif self.layers <= 75:
-                while not context.run_recognition(
-                    "Fight_Victory",
-                    context.tasker.controller.post_screencap().wait().get(),
-                ):
+                for _ in range(2):
                     context.run_task("Bag_Open")
                     fightUtils.findItem("异域的灯芯", True, context, boss_x, boss_y)
                 for _ in range(3):
-                    if not fightUtils.cast_magic("光", "祝福术", context):
+                    if not fightUtils.cast_magic("水", "寒冰护盾", context):
                         if not fightUtils.cast_magic("水", "治疗术", context):
                             fightUtils.cast_magic("土", "石肤术", context)
             else:
-                while not context.run_recognition(
-                    "Fight_Victory",
-                    context.tasker.controller.post_screencap().wait().get(),
-                ):
+                for _ in range(2):
                     context.run_task("Bag_Open")
                     fightUtils.findItem("异域的灯芯", True, context, boss_x, boss_y)
 
@@ -270,10 +274,10 @@ class JJC101(CustomAction):
     def handle_boos_100_event(self, context: Context):
         fightUtils.cast_magic("气", "静电场", context)
         fightUtils.cast_magic("火", "毁灭之刃", context)
-        fightUtils.cast_magic("暗", "变形术", context)
+        fightUtils.cast_magic("气", "瓦解术", context)
         for _ in range(6):
             context.tasker.controller.post_click(boss_x, boss_y).wait()
-            time.sleep(0.1)
+            time.sleep(0.3)
 
     def handle_boos_event(self, context: Context):
         if self.layers <= 60:
@@ -341,7 +345,7 @@ class JJC101(CustomAction):
             context.run_task("Fight_ReturnMainWindow")
             RunResult = context.run_task("Fight_CheckLayer")
             if RunResult.nodes:
-                self.layers = fightUtils.extract_numbers(
+                self.layers = fightUtils.extract_num_layer(
                     RunResult.nodes[0].recognition.best_result.text
                 )
 
@@ -368,21 +372,20 @@ class JJC101(CustomAction):
                     logger.info("神龙带肥家lo~")
 
                 continue
-
             # 小怪层探索
             else:
                 if (
                     self.layers >= 85
-                    and self.layers % 2 == 0
+                    and self.layers % 2 == 1
                     and fightUtils.cast_magic("土", "地震术", context)
                 ):
                     pass
                 else:
                     context.run_task("JJC_Fight_ClearCurrentLayer")
-            time.sleep(1)
 
+            # logger.info(f"头盔状态: {self.isHaveSpartanHat}")
             # 检测完美击败
-            if context.run_recognition(
+            if not self.isHaveSpartanHat and context.run_recognition(
                 "Fight_Perfect", context.tasker.controller.post_screencap().wait().get()
             ):
                 logger.info(f"第{self.layers} 完美击败")
@@ -391,7 +394,6 @@ class JJC101(CustomAction):
                     context.tasker.controller.post_screencap().wait().get(),
                 ):
                     pass
-                pass
 
             # 检测卡剧情
             image = context.tasker.controller.post_screencap().wait().get()
@@ -415,7 +417,7 @@ class JJC101(CustomAction):
                 context.run_task("JJC_StoneChest")
 
             # 寻找斯巴达头盔
-            if self.isHaveSpartanHat != True:
+            if not self.isHaveSpartanHat:
                 # 检测三次斯巴达的头盔，检查到了就提前结束检查
                 time.sleep(1)
                 for _ in range(5):
@@ -432,6 +434,8 @@ class JJC101(CustomAction):
                 "FindKeyHole", context.tasker.controller.post_screencap().wait().get()
             ):
                 logger.warning("检查到神秘的洞穴捏，请冒险者大人检查！！")
+                fightUtils.send_alert("洞穴警告", "发现神秘洞穴，请及时处理！")
+
                 while not context.run_recognition(
                     "Fight_OpenedDoor",
                     context.tasker.controller.post_screencap().wait().get(),
@@ -439,7 +443,6 @@ class JJC101(CustomAction):
                     time.sleep(3)
 
                 logger.info("冒险者大人已找到钥匙捏，继续探索")
-                time.sleep(2)
                 context.run_task("Fight_OpenedDoor")
 
         logger.info(f"竞技场探索结束，当前到达{self.layers}层")
@@ -462,22 +465,11 @@ class JJC_Fight_ClearCurrentLayer(CustomAction):
                 # 计算 ROI 区域
                 x, y, w, h = roi_matrix[r][c]
                 roi_image = img[y : y + h, x : x + w]
-                left_bottom_roi = roi_image[0:60, 0:60].copy()  # 提取左上角 20x20 区域
-                left_reco_detail = context.run_recognition(
-                    "GridMonsterCheckTemplate",
-                    left_bottom_roi,
-                    pipeline_override={
-                        "GridMonsterCheckTemplate": {
-                            "recognition": "ColorMatch",
-                            "method": 4,
-                            "lower": [190, 35, 35],
-                            "upper": [230, 65, 65],
-                            "count": 20,
-                        }
-                    },
+                LeftBottomImg = roi_image[0:60, 0:60].copy()  # 提取左下角 20x20 区域
+                left_detected = fightUtils.rgb_pixel_count(
+                    LeftBottomImg, [190, 35, 35], [235, 65, 65], 20, context
                 )
-
-                if left_reco_detail:
+                if left_detected:
                     visited[r][c] += 1
                     # logger.info(f"检测({r + 1},{c + 1})有怪物: {x}, {y}, {w}, {h}")
                     for _ in range(3):
@@ -485,6 +477,7 @@ class JJC_Fight_ClearCurrentLayer(CustomAction):
                             x + w // 2, y + h // 2
                         ).wait()
                         time.sleep(0.1)
+                    time.sleep(0.1)
         return True
 
     def CheckClosedDoor(self, context: Context):
@@ -524,7 +517,7 @@ class JJC_Fight_ClearCurrentLayer(CustomAction):
             isCheckDragon = False
 
         # 开始清理当前层
-        cnt = 15
+        cnt = 18
         while cnt > 0:
             if context.tasker.stopping:
                 logger.info("JJC_Fight_ClearCurrentLayer 被停止")
@@ -552,47 +545,28 @@ class JJC_Fight_ClearCurrentLayer(CustomAction):
                     # 计算 ROI 区域
                     x, y, w, h = roi_matrix[r][c]
                     roi_image = img[y : y + h, x : x + w]
-                    left_bottom_roi = roi_image[
+                    LeftBottomImg = roi_image[
                         h - 15 : h, 0:20
                     ].copy()  # 提取左下角 20x20 区域
-                    right_bottom_roi = roi_image[
+                    RightBottomImg = roi_image[
                         h - 15 : h, w - 20 : w
                     ].copy()  # 提取右下角 20x20 区域
 
-                    left_reco_detail = context.run_recognition(
-                        "GridCheckTemplate",
-                        left_bottom_roi,
-                        pipeline_override={
-                            "GridCheckTemplate": {
-                                "recognition": "ColorMatch",
-                                "method": 4,
-                                "lower": [130, 135, 143],
-                                "upper": [170, 175, 183],
-                                "count": 10,
-                            }
-                        },
+                    # OpenCV方式
+                    left_detected = fightUtils.rgb_pixel_count(
+                        LeftBottomImg, [130, 135, 143], [170, 175, 183], 10, context
                     )
-                    right_reco_detail = context.run_recognition(
-                        "GridCheckTemplate",
-                        right_bottom_roi,
-                        pipeline_override={
-                            "GridCheckTemplate": {
-                                "recognition": "ColorMatch",
-                                "method": 4,
-                                "lower": [130, 135, 143],
-                                "upper": [170, 175, 183],
-                                "count": 10,
-                            }
-                        },
+                    right_detected = fightUtils.rgb_pixel_count(
+                        RightBottomImg, [130, 135, 143], [170, 175, 183], 10, context
                     )
 
-                    if left_reco_detail or right_reco_detail:
+                    if left_detected or right_detected:
                         context.tasker.controller.post_click(
                             x + w // 2, y + h // 2
                         ).wait()
                         visited[r][c] += 1
                         checkGridCnt += 1
-                        time.sleep(0.05)
+                        time.sleep(0.1)
 
             # 检测怪物并进行攻击
             if not self.CheckMonsterCnt(context):
@@ -667,6 +641,27 @@ class Fight_TestAction(CustomAction):
         fightUtils.title_learn("魔法", 2, "白袍法师", 3, context)
         fightUtils.title_learn("魔法", 3, "祭司", 3, context)
         fightUtils.title_learn("魔法", 4, "气系大师", 3, context)
+
+        # fightUtils.disassembleEquipment(
+        #     6,
+        #     [
+        #         "土系魔法书",
+        #         "气系魔法书",
+        #         "火系魔法书",
+        #         "水系魔法书",
+        #         "光系魔法书",
+        #         "暗系魔法书",
+        #         "执政官铠甲",
+        #         "骨灰指轮",
+        #         "次元靴",
+        #         "大德鲁伊斗篷",
+        #         "法老面具",
+        #         "格斗大师拳套",
+        #         "圣者的日记",
+        #         "伊斯坦丁",
+        #     ],
+        #     context,
+        # )
         return CustomAction.RunResult(success=True)
 
 
@@ -680,5 +675,40 @@ class JJC_DragonWishTest(CustomAction):
         argv: CustomAction.RunArg,
     ) -> CustomAction.RunResult:
         fightUtils.dragonwish("工资", context)
+
+        return CustomAction.RunResult(success=True)
+
+
+@AgentServer.custom_action("JJC_CalEarning")
+class JJC_CalEarning(CustomAction):
+    # 执行函数
+    def run(
+        self,
+        context: Context,
+        argv: CustomAction.RunArg,
+    ) -> CustomAction.RunResult:
+        time.sleep(3)
+        for _ in range(5):
+            context.tasker.controller.post_click(640, 360)
+            time.sleep(0.2)
+            context.tasker.controller.post_click(640, 360)
+        image = context.tasker.controller.post_screencap().wait().get()
+        if recoDetail := context.run_recognition(
+            "CallEarning_Reco",
+            image,
+            pipeline_override={
+                "CallEarning_Reco": {
+                    "recognition": "OCR",
+                    "expected": ["获得"],
+                    "roi": [78, 940, 471, 116],
+                },
+            },
+        ):
+            EarningDetail = fightUtils.pair_by_distance(recoDetail.all_results, 400)
+            logger.info(EarningDetail)
+
+        context.run_task("ReturnBigMap")
+        time.sleep(3)
+        context.run_task("Start_Up")
 
         return CustomAction.RunResult(success=True)

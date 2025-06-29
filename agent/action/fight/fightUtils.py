@@ -1,9 +1,13 @@
 from maa.context import Context
 from utils import logger
+from plyer import notification
 
 import math
 import re
 import time
+import cv2
+import numpy as np
+
 
 # 神龙许愿ROI [77,465,570,553]
 # 神龙许愿list = ["我要获得钻石", "我要神奇的果实", "我要更多的伙伴", "我要获得巨龙之力", "我要学习龙语魔法", "我要变得更强", "我要变得富有", "我要最凶残的装备", "我要更多的伙伴", "我要大量的矿石", "我要你的收藏品", "我要您的碎片"]
@@ -31,8 +35,26 @@ EquipmentType: dict = {
 }
 
 
+def send_alert(title, message):
+    try:
+        notification.notify(
+            title=title, message=message, app_name="MaaGumballs", timeout=10
+        )
+    except Exception as e:
+        logger.error(f"通知发送失败：{str(e)}")
+
+
+# 从字符串中识别并返回数字
+def extract_num(input_string):
+    match = re.search(r"(\d+)", input_string)
+    if match:
+        return int(match.group(1))
+    else:
+        return 0
+
+
 # 从字符串中识别并返回有“层”这个文字的前缀数字
-def extract_numbers(input_string):
+def extract_num_layer(input_string):
     match = re.search(r"(\d+)层", input_string)
     if match:
         return int(match.group(1))
@@ -74,13 +96,13 @@ def is_roi_in_or_mostly_in(roi1, roi2):
     return False
 
 
-def cast_magic(Type: str, MagicName: str, context: Context, Target_pos: tuple = None):
+def cast_magic(Type: str, MagicName: str, context: Context, TargetPos: tuple = (0, 0)):
     """施放指定类型的魔法
 
     Args:
         Type: 魔法的类型，如 '火', '土', '气' 等
         MagicName: 具体的魔法名称，如 '祝福术', '石肤术' 等
-        Target_pos: 目标位置，如 (x, y)
+        TargetPos: 目标位置，如 (x, y)
         context: 游戏上下文对象，包含当前状态信息
 
     Returns:
@@ -103,21 +125,29 @@ def cast_magic(Type: str, MagicName: str, context: Context, Target_pos: tuple = 
         image,
         pipeline_override={"Fight_Magic_Cast": {"expected": MagicName}},
     ):
-        if not Target_pos:
-            context.run_task(
-                "Fight_Magic_Cast",
-                pipeline_override={"Fight_Magic_Cast": {"expected": MagicName}},
-            )
-            logger.info(f"施放魔法:{MagicName}")
-        else:
+        # 自身释放的魔法
+        if TargetPos == (0, 0):
             context.run_task(
                 "Fight_Magic_Cast",
                 pipeline_override={
-                    "Fight_Magic_Cast": {"expected": MagicName, "next": []}
+                    "Fight_Magic_Cast": {
+                        "expected": MagicName,
+                        "next": "Fight_ClickMagic",
+                    }
                 },
             )
-            context.tasker.controller.post_click(Target_pos[0], Target_pos[1]).wait()
-            logger.info(f"施放魔法:{MagicName}在{Target_pos[0], Target_pos[1]}")
+            logger.info(f"施放魔法:{MagicName}")
+        # 指定位置释放的魔法
+        else:
+            rect_x, rect_y = TargetPos[0] - 50, TargetPos[1] - 50
+            context.run_task(
+                "Fight_Magic_Cast",
+                pipeline_override={
+                    "Fight_Magic_Cast": {"expected": MagicName},
+                    "Fight_ClickMagic": {"target": [rect_x, rect_y, 100, 100]},
+                },
+            )
+            logger.info(f"施放魔法:{MagicName}在{TargetPos}")
     else:
         logger.info(f"没有找到对应的魔法:{MagicName}")
         context.run_task("BackText")
@@ -332,6 +362,62 @@ def findEquipment(
             logger.info(f"背包未找到: {equipmentName}")
             return False
 
+    return True
+
+
+def disassembleEquipment(
+    equipmentLevel: int, equipmentNameList: list[str], context: Context
+):
+    """分解所有目标装备"""
+
+    # 初始化背包
+    while BagRecoDetail := context.run_recognition(
+        "Bag_ToPrevPage", context.tasker.controller.post_screencap().wait().get()
+    ):
+        box = BagRecoDetail.best_result.box
+        center_x, center_y = box[0] + box[2] // 2, box[1] + box[3] // 2
+        context.tasker.controller.post_click(center_x, center_y).wait()
+        time.sleep(0.5)
+
+    # 开始寻找背包
+    for equipmentName in equipmentNameList:
+        equipment_path = f"equipments/{equipmentLevel}level/{equipmentName}.png"
+        image = context.tasker.controller.post_screencap().wait().get()
+        ItemRecoDetail = context.run_recognition(
+            "Bag_FindItem",
+            image,
+            pipeline_override={
+                "Bag_FindItem": {
+                    "template": equipment_path,
+                },
+            },
+        )
+
+        # 输出目标装备是否存在
+        if ItemRecoDetail:
+            logger.info(f"已找到: {equipmentName}")
+            center_x, center_y = (
+                ItemRecoDetail.box[0] + ItemRecoDetail.box[2] // 2,
+                ItemRecoDetail.box[1] + ItemRecoDetail.box[3] // 2,
+            )
+            context.tasker.controller.post_click(center_x, center_y).wait()
+            time.sleep(1)
+            context.run_task("Bag_DisassembleItem")
+            # 点击分解按钮之后有两种情况，如果只有一件装备那么只需要点击确定，如果超过一件装备那么需要点击分解x次
+            image = context.tasker.controller.post_screencap().wait().get()
+            if context.run_recognition("ConfirmButton_500ms", image):
+                context.run_task("ConfirmButton_500ms")
+            elif context.run_recognition("Bag_DisassembleAllItem", image):
+                context.run_task("Bag_DisassembleAllItem")
+            time.sleep(1)
+            context.run_task("ConfirmButton_500ms")
+
+            logger.info(f"{equipmentName}已分解")
+            time.sleep(1)
+        elif context.run_recognition("Bag_ToNextPage", image):
+            context.run_task("Bag_ToNextPage")
+        else:
+            logger.info(f"背包未找到: {equipmentName}")
     return True
 
 
@@ -579,125 +665,145 @@ def dragonwish(targetWish: str, context: Context):
         logger.error("请输入[工资, 神锻, 测试]中的一个")
     # 神龙许愿list = ["我要获得钻石", "我要神奇的果实", "我想获得巨龙之力", "我要学习龙语魔法", "我要变得更强","我要最凶残的装备", "我要变得富有", "我要大量的矿石", "我要你的收藏品", "我要您的碎片", "我要更多的伙伴"]
 
-    # # 等待5秒，确保界面加载完毕，可以考虑移除
-    time.sleep(5)
-    Itemdetail = context.run_task("Fight_FindDragon_Next")
-    if Itemdetail.nodes:
-        # 集齐七个龙珠并进入到许愿界面
-        textdetail = context.run_task("Fight_FindText")
-        if textdetail.nodes:
-            for result in textdetail.nodes[0].recognition.filterd_results:
-                if result.text.endswith("！"):
-                    result.text = result.text[:-1]
-                cuurent_wish_index = wishlist.index(result.text)
-                logger.info(f"当前许愿: {result.text}")
-                if cuurent_wish_index < min_index:
-                    min_index = cuurent_wish_index
-                    min_index_wish = result.text
-                    min_index_wish_pos = result.box
-            if min_index_wish_pos:
-                center_x, center_y = (
-                    min_index_wish_pos[0] + min_index_wish_pos[2] // 2,
-                    min_index_wish_pos[1] + min_index_wish_pos[3] // 2,
-                )
-                time.sleep(1)
-                context.tasker.controller.post_click(center_x, center_y).wait()
-                time.sleep(2)
+    # # 等待8秒，确保界面加载完毕，可以考虑移除
+    time.sleep(8)
+    textdetail = context.run_task("Fight_FindText")
+    if textdetail.nodes:
+        for result in textdetail.nodes[0].recognition.filterd_results:
+            if result.text.endswith("！"):
+                result.text = result.text[:-1]
+            cuurent_wish_index = wishlist.index(result.text)
+            logger.info(f"当前许愿: {result.text}")
+            if cuurent_wish_index < min_index:
+                min_index = cuurent_wish_index
+                min_index_wish = result.text
+                min_index_wish_pos = result.box
+        if min_index_wish_pos:
+            center_x, center_y = (
+                min_index_wish_pos[0] + min_index_wish_pos[2] // 2,
+                min_index_wish_pos[1] + min_index_wish_pos[3] // 2,
+            )
+            time.sleep(1)
+            context.tasker.controller.post_click(center_x, center_y).wait()
+            time.sleep(2)
 
-            logger.info(f"已点击愿望: {min_index_wish}")
-            status = True
-            while status:
-                image = context.tasker.controller.post_screencap().wait().get()
-                TextRecoDetail = context.run_recognition(
-                    "Fight_FindText",
-                    image,
-                    pipeline_override={
-                        "Fight_FindText": {
-                            "expected": "神龙冈布奥",
-                        }
+        logger.info(f"已点击愿望: {min_index_wish}")
+        status = True
+        while status:
+            image = context.tasker.controller.post_screencap().wait().get()
+            TextRecoDetail = context.run_recognition(
+                "TextReco",
+                image,
+                pipeline_override={
+                    "TextReco": {
+                        "recognition": "OCR",
+                        "expected": "神龙",
+                        "roi": [21, 217, 682, 762],
+                        "action": "DoNothing",
                     },
+                },
+            )
+            status = TextRecoDetail
+            if TextRecoDetail:
+                center_x, center_y = (
+                    TextRecoDetail.box[0] + TextRecoDetail.box[2] // 2,
+                    TextRecoDetail.box[1] + TextRecoDetail.box[3] // 2,
                 )
-                status = TextRecoDetail
-                if TextRecoDetail:
-                    center_x, center_y = (
-                        TextRecoDetail.box[0] + TextRecoDetail.box[2] // 2,
-                        TextRecoDetail.box[1] + TextRecoDetail.box[3] // 2,
-                    )
-                    context.tasker.controller.post_click(center_x, center_y).wait()
-                    time.sleep(1)
-            # 已点击愿望，等待界面加载
-            if min_index_wish in [
-                "我要你的收藏品",
-                "我想学习龙语魔法",
-                "我想获得巨龙之力",
-                "我要最凶残的装备",
-                "我需要您的碎片",
-            ]:
-                pass
-
-            elif min_index_wish in ["我要变得富有"]:
-                # 等待地图加载
-                time.sleep(10)
-
-                for _ in range(3):
-                    if not cast_magic("暗", "死亡波纹", context):
-                        if not cast_magic("土", "地刺术", context, (350, 400)):
-                            cast_magic("火", "流星雨", context, (350, 400))
-                            if targetWish == "工资":
-                                logger.info("那只能使用天眼了")
-                                cast_magic_special("天眼", context)
-
-                            else:
-                                logger.info("没有死波没有地刺,流星雨不会也没有吧！")
-
-                # 除变强以外的夹层的出口一定在右下角
-                context.run_task("Fight_ReturnMainWindow")
-                context.tasker.controller.post_click(646, 939).wait()
-                # 等待拾取结束
-            elif min_index_wish in ["我要更多的伙伴"]:
-                context.run_task("Fight_ReturnMainWindow")
-                context.tasker.controller.post_click(646, 939).wait()
-                pass
-                # todo 清理当前层的逻辑
-            elif min_index_wish in ["我要获得钻石"]:
-                # 等待地图加载
-                time.sleep(10)
-
-                for _ in range(110):
-                    time.sleep(0.1)
-                    context.tasker.controller.post_click(356, 407).wait()
-                    context.tasker.controller.post_click(214, 681).wait()
-                    context.tasker.controller.post_click(493, 684).wait()
-
-                # 除变强以外的夹层的出口一定在右下角
-                # 等待拾取结束
-                context.run_task("Fight_ReturnMainWindow")
-                context.tasker.controller.post_click(646, 939).wait()
-
-            elif min_index_wish in ["我要大量的矿石"]:
-                # 等待地图加载
-                time.sleep(10)
-                for _ in range(13):
-                    time.sleep(0.5)
-                    context.tasker.controller.post_click(365, 535).wait()
-                    context.tasker.controller.post_click(219, 813).wait()
-                    context.tasker.controller.post_click(505, 805).wait()
-                    time.sleep(1)
-
-                # 除变强以外的夹层的出口一定在右下角
-                # 等待拾取结束
-                context.run_task("Fight_ReturnMainWindow")
-                context.tasker.controller.post_click(646, 939).wait()
-
-            elif min_index_wish in ["我要变得更强", "我要神奇的果实"]:
-                # TODO: 调用boss层
-
-                if targetWish == "神锻":
-                    pass
-                pass
-        else:
-            # 没有出现目标，不进行后续处理
+                context.tasker.controller.post_click(center_x, center_y).wait()
+                time.sleep(1)
+        # 已点击愿望，等待界面加载
+        if min_index_wish in [
+            "我要你的收藏品",
+            "我想学习龙语魔法",
+            "我想获得巨龙之力",
+            "我要最凶残的装备",
+            "我需要您的碎片",
+        ]:
             pass
+
+        elif min_index_wish in ["我要变得富有"]:
+            # 等待地图加载
+            time.sleep(10)
+
+            for _ in range(3):
+                if not cast_magic("暗", "死亡波纹", context):
+                    if not cast_magic("土", "地刺术", context, (350, 400)):
+                        cast_magic("火", "流星雨", context, (350, 400))
+                        if targetWish == "工资":
+                            logger.info("那只能使用天眼了")
+                            cast_magic_special("天眼", context)
+
+                        else:
+                            logger.info("没有死波没有地刺,流星雨不会也没有吧！")
+
+            # 除变强以外的夹层的出口一定在右下角
+            context.run_task("Fight_ReturnMainWindow")
+            time.sleep(2)
+            context.tasker.controller.post_click(646, 939).wait()
+            time.sleep(2)
+            image = context.tasker.controller.post_screencap().wait().get()
+            if context.run_recognition("ConfirmButton_500ms", image):
+                context.run_task("ConfirmButton_500ms")
+            # 等待拾取结束
+        elif min_index_wish in ["我要更多的伙伴"]:
+            context.run_task("Fight_ReturnMainWindow")
+            time.sleep(2)
+            context.tasker.controller.post_click(646, 939).wait()
+            time.sleep(2)
+            image = context.tasker.controller.post_screencap().wait().get()
+            if context.run_recognition("ConfirmButton_500ms", image):
+                context.run_task("ConfirmButton_500ms")
+            pass
+            # todo 清理当前层的逻辑
+        elif min_index_wish in ["我要获得钻石"]:
+            # 等待地图加载
+            time.sleep(10)
+
+            for _ in range(110):
+                time.sleep(0.1)
+                context.tasker.controller.post_click(356, 407).wait()
+                context.tasker.controller.post_click(214, 681).wait()
+                context.tasker.controller.post_click(493, 684).wait()
+
+            # 除变强以外的夹层的出口一定在右下角
+            # 等待拾取结束
+            context.run_task("Fight_ReturnMainWindow")
+            time.sleep(2)
+            context.tasker.controller.post_click(646, 939).wait()
+            time.sleep(2)
+            image = context.tasker.controller.post_screencap().wait().get()
+            if context.run_recognition("ConfirmButton_500ms", image):
+                context.run_task("ConfirmButton_500ms")
+
+        elif min_index_wish in ["我要大量的矿石"]:
+            # 等待地图加载
+            time.sleep(10)
+            for _ in range(13):
+                time.sleep(0.5)
+                context.tasker.controller.post_click(365, 535).wait()
+                context.tasker.controller.post_click(219, 813).wait()
+                context.tasker.controller.post_click(505, 805).wait()
+
+            # 除变强以外的夹层的出口一定在右下角
+            # 等待拾取结束
+            context.run_task("Fight_ReturnMainWindow")
+            time.sleep(2)
+            context.tasker.controller.post_click(646, 939).wait()
+            time.sleep(2)
+            image = context.tasker.controller.post_screencap().wait().get()
+            if context.run_recognition("ConfirmButton_500ms", image):
+                context.run_task("ConfirmButton_500ms")
+
+        elif min_index_wish in ["我要变得更强", "我要神奇的果实"]:
+            # TODO: 调用boss层
+
+            if targetWish == "神锻":
+                pass
+            pass
+    else:
+        # 没有出现目标，不进行后续处理
+        logger.info(f"没有检测到（我要，我想，我需)的字样, 检查一下")
+        pass
     return min_index_wish
 
 
@@ -745,6 +851,70 @@ def Auto_CallDog(context: Context):
     return True
 
 
+
+def rgb_pixel_count(
+    image,
+    lower,
+    upper,
+    count,
+    context: Context,
+    method="opencv",
+) -> int:
+    """
+    RGB颜色空间像素计数
+    :param image: BGR格式图像（需转换）
+    :param roi: 检测区域 [x,y,w,h]
+    :param lower: RGB下限 [R,G,B] (0-255)
+    :param upper: RGB上限 [R,G,B]
+    :return: 匹配像素数量
+    """
+
+    # RGB转BGR
+    lower = [lower[2], lower[1], lower[0]]
+    upper = [upper[2], upper[1], upper[0]]
+
+    if method == "opencv":
+        # 创建三维掩膜
+        lower_bound = np.array(lower, dtype=np.uint8)
+        upper_bound = np.array(upper, dtype=np.uint8)
+        mask = cv2.inRange(image, lower_bound, upper_bound)
+
+        # 统计有效像素数量
+        valid_pixel_count = cv2.countNonZero(mask)
+        return valid_pixel_count if valid_pixel_count > count else 0
+
+    elif recoDetail := context.run_recognition(
+        "GridCheckTemplate",
+        image,
+        pipeline_override={
+            "GridCheckTemplate": {
+                "recognition": "ColorMatch",
+                "method": 4,
+                "lower": lower,
+                "upper": upper,
+                "count": count,
+            }
+        },
+    ):
+        if recoDetail:
+            valid_pixel_count = recoDetail.best_result.count
+            return valid_pixel_count if valid_pixel_count > count else 0
+        return 0
+    else:
+        return 0
+
+
+def PushOne(context: Context):
+    context.run_task("Fight_ReturnMainWindow")
+    if not cast_magic("水", "治疗术", context):
+        if not cast_magic("水", "寒冰护盾", context):
+            if not cast_magic("暗", "死亡波纹", context):
+                if cast_magic("暗", "吸能术", context):
+                    return True
+                else:
+                    logger.info("没有治疗术、寒冰护盾、吸能术，死亡波纹, 无法推序！")
+                    return False
+                  
 def Saveyourlife(context: Context):
     image = context.tasker.controller.post_screencap().wait().get()
     TextRecoDetail = context.run_recognition(

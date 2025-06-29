@@ -22,7 +22,7 @@
             "ConfirmButton"
         ],
         "post_delay": 500,
-        "timeout": 2000
+        "timeout": 3000
     },
     "Fight_ClosedDoor": {
         "recognition": "TemplateMatch",
@@ -36,9 +36,9 @@
             707,
             947
         ],
-        "action": "DoNothing",
+        "action": "Click",
         "threshold": 0.7,
-        "post_delay": 500,
+        "post_delay": 700,
         "timeout": 2000
     },
     "Fight_DownStaris_Loading": {
@@ -64,7 +64,7 @@
     },
     "Fight_LeaveMaze": {
         "next": [
-            "AlchemyReward"
+            "Fight_CalEarning"
         ],
         "interrupt": [
             "Communicating",
@@ -73,6 +73,20 @@
             "BackText",
             "Fight_LeaveMaze_Leave"
         ]
+    },
+    "Fight_CalEarning": {
+        "recognition": "OCR",
+        "expected": [
+            "迷宫结算"
+        ],
+        "roi": [
+            175,
+            19,
+            370,
+            225
+        ],
+        "action": "Custom",
+        "custom_action": "JJC_CalEarning"
     },
     "Fight_LeaveMaze_Leave": {
         "recognition": "TemplateMatch",
@@ -93,8 +107,7 @@
     "Fight_LeaveMaze_StopButton": {
         "recognition": "OCR",
         "expected": [
-            "结束",
-            "结束探险"
+            "结束"
         ],
         "roi": [
             15,
@@ -130,15 +143,15 @@
             150
         ],
         "action": "DoNothing",
-        "timeout": 2000,
-        "post_delay": 200
+        "post_delay": 200,
+        "timeout": 2000
     },
     "Fight_ReturnMainWindow": {
         "next": [
             "Fight_MainWindow"
         ],
         "interrupt": [
-            "BackText",
+            "BackText_500ms",
             "GameLoading"
         ]
     },
@@ -152,7 +165,7 @@
             172
         ]
     },
-    "Fight_EquipmentStore": {
+    "Fight_EquipmentShop": {
         "recognition": "TemplateMatch",
         "template": "fight/UniversalUI/宝物商店.png",
         "roi": [
@@ -166,7 +179,7 @@
         "timeout": 2000,
         "next": []
     },
-    "Fight_SkillStore": {
+    "Fight_SkillShop": {
         "recognition": "TemplateMatch",
         "template": "fight/UniversalUI/技能商店.png",
         "roi": [
@@ -176,9 +189,25 @@
             947
         ],
         "action": "Click",
-        "post_delay": 1000,
+        "post_delay": 500,
         "timeout": 2000,
-        "next": []
+        "next": [
+            "Fight_SkillShop_Shopping"
+        ]
+    },
+    "Fight_SkillShop_Shopping": {
+        "recognition": "OCR",
+        "expected": "卷轴商店",
+        "roi": [
+            190,
+            346,
+            327,
+            137
+        ],
+        "action": "Custom",
+        "custom_action": "SkillShop_Shopping",
+        "post_delay": 200,
+        "timeout": 2000
     },
     "Fight_SkillPack_Open": {
         "recognition": "TemplateMatch",
@@ -191,7 +220,7 @@
         ],
         "action": "Click",
         "threshold": 0.8,
-        "post_delay": 500,
+        "post_delay": 200,
         "timeout": 2000
     },
     "Fight_SkillPack_Type": {
@@ -204,7 +233,7 @@
             225
         ],
         "action": "Click",
-        "post_delay": 500,
+        "post_delay": 200,
         "timeout": 2000
     },
     "Fight_ClickSpecialMagicPage": {
@@ -219,7 +248,7 @@
             "特殊"
         ],
         "action": "Click",
-        "post_delay": 500,
+        "post_delay": 200,
         "timeout": 2000
     },
     "Fight_ClickFireMagicPage": {
@@ -240,7 +269,7 @@
             91,
             78
         ],
-        "post_delay": 500,
+        "post_delay": 200,
         "timeout": 2000
     },
     "Fight_ClickWaterMagicPage": {
@@ -261,7 +290,7 @@
             85,
             70
         ],
-        "post_delay": 500,
+        "post_delay": 200,
         "timeout": 2000
     },
     "Fight_ClickEarthMagicPage": {
@@ -282,7 +311,7 @@
             77,
             64
         ],
-        "post_delay": 500,
+        "post_delay": 200,
         "timeout": 2000
     },
     "Fight_ClickQiMagicPage": {
@@ -303,7 +332,7 @@
             95,
             75
         ],
-        "post_delay": 500,
+        "post_delay": 200,
         "timeout": 2000
     },
     "Fight_ClickLightMagicPage": {
@@ -324,7 +353,7 @@
             87,
             80
         ],
-        "post_delay": 500,
+        "post_delay": 200,
         "timeout": 2000
     },
     "Fight_ClickDarkMagicPage": {
@@ -345,7 +374,7 @@
             95,
             77
         ],
-        "post_delay": 500,
+        "post_delay": 200,
         "timeout": 2000
     },
     "Fight_Magic_Cast": {
@@ -358,11 +387,21 @@
             658
         ],
         "action": "Click",
-        "post_delay": 500,
+        "post_delay": 100,
         "timeout": 2000,
         "next": [
-            "ClickCenter"
+            "Fight_ClickMagic"
         ]
+    },
+    "Fight_ClickMagic": {
+        "action": "Click",
+        "target": [
+            237,
+            602,
+            100,
+            100
+        ],
+        "post_delay": 200
     },
     "Fight_Magic_Elemental": {
         "next": [
@@ -373,7 +412,7 @@
             "Fight_DragonWish",
             "Fight_SkillPack_Open"
         ],
-        "post_delay": 500,
+        "post_delay": 100,
         "timeout": 2000
     },
     "Fight_Magic_Special_Cast": {
@@ -386,10 +425,10 @@
             658
         ],
         "action": "Click",
-        "post_delay": 500,
+        "post_delay": 100,
         "timeout": 2000,
         "next": [
-            "ClickCenter"
+            "Fight_ClickMagic"
         ]
     },
     "Fight_Magic_Special": {
@@ -400,7 +439,7 @@
             "Fight_DragonWish",
             "Fight_SkillPack_Open"
         ],
-        "post_delay": 500,
+        "post_delay": 100,
         "timeout": 2000
     },
     "Fight_LongPress": {
@@ -454,6 +493,54 @@
         "post_delay": 200,
         "timeout": 2000
     },
+    "Fight_GetHP": {
+        "recognition": "OCR",
+        "expected": "\\d+",
+        "roi": [
+            175,
+            1194,
+            151,
+            78
+        ],
+        "action": "DoNothing",
+        "timeout": 1000
+    },
+    "Fight_GetMP": {
+        "recognition": "OCR",
+        "expected": "\\d+",
+        "roi": [
+            394,
+            1201,
+            157,
+            70
+        ],
+        "action": "DoNothing",
+        "timeout": 1000
+    },
+    "Fight_GetAD": {
+        "recognition": "OCR",
+        "expected": "\\d+",
+        "roi": [
+            172,
+            1111,
+            188,
+            72
+        ],
+        "action": "DoNothing",
+        "timeout": 1000
+    },
+    "Fight_GetAP": {
+        "recognition": "OCR",
+        "expected": "\\d+",
+        "roi": [
+            377,
+            1127,
+            178,
+            60
+        ],
+        "action": "DoNothing",
+        "timeout": 1000
+    },
     "Fight_TestAction": {
         "action": "Custom",
         "custom_action": "Fight_TestAction"
@@ -495,15 +582,28 @@
         "post_delay": 1000,
         "timeout": 2000
     },
-    "Fight_BossEntry": {
-        "recognition": "OCR",
-        "expected": [
-            "Boss"
+    "Fight_CheckBossStatus": {
+        "doc": "仅仅用作识别boss血量,不做runtask执行",
+        "recognition": "ColorMatch",
+        "roi": [
+            141,
+            440,
+            85,
+            70
         ],
+        "lower": [
+            237,
+            79,
+            79
+        ],
+        "upper": [
+            255,
+            99,
+            99
+        ],
+        "count": 15,
         "action": "DoNothing",
-        "post_delay": 500,
-        "next": "Fight_BossEntry",
-        "timeout": 2000
+        "timeout": 1000
     },
     "Fight_CheckDragonBall": {
         "recognition": "TemplateMatch",
@@ -517,7 +617,7 @@
             157
         ],
         "action": "DoNothing",
-        "threshold": 0.9,
+        "threshold": 0.95,
         "post_delay": 200,
         "timeout": 2000
     },
