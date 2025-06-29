@@ -918,10 +918,10 @@ def PushOne(context: Context):
 def Saveyourlife(context: Context):
     image = context.tasker.controller.post_screencap().wait().get()
     TextRecoDetail = context.run_recognition(
-        "Fight_FindText",
+        "Fight_FindRespawn",
         image,
         pipeline_override={
-            "Fight_FindText": {
+            "Fight_FindRespawn": {
                 "roi": [66, 563, 583, 446],
                 "expected": "复活",
             }
