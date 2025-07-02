@@ -927,8 +927,8 @@ def Saveyourlife(context: Context):
             }
         },
     )
-    logger.info("夭寿啦！！！检测到冈布奥倒下啦！")
     if TextRecoDetail:
+        logger.info("夭寿啦！！！检测到冈布奥倒下啦！")
         # 小SL, 保住狗命
         context.run_task("LogoutGame")
         context.run_task("ReturnMaze")
