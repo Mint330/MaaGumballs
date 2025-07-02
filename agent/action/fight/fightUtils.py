@@ -885,6 +885,7 @@ def Saveyourlife(context: Context):
 >>>>>>> 4e7b6d9 (Update fightUtils.py)
         },
     )
+<<<<<<< HEAD
 
 
 def autoOpenPicup(context: Context):
@@ -913,6 +914,8 @@ def Saveyourlife(context: Context):
         if TextRecoDetail:
             break
 
+=======
+>>>>>>> 734c508 (Update fightUtils.py)
     if TextRecoDetail:
         logger.info("夭寿啦！！！检测到冈布奥倒下啦！")
         # 小SL, 保住狗命
