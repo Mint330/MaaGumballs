@@ -427,13 +427,79 @@
             "fight/Mars/MarsExchangeShop_02.png"
         ],
         "roi": [
-            33,
-            677,
-            658,
-            180
+            4,
+            182,
+            705,
+            839
         ],
         "action": "Click",
         "post_delay": 500,
+        "timeout": 2000
+    },
+    "Mars_Exchange_Shop_Check": {
+        "recognition": "TemplateMatch",
+        "template": [
+            "fight/Mars/MarsDagger.png",
+            "fight/Mars/MarsDagger_debug.png"
+        ],
+        "roi": [
+            424,
+            461,
+            217,
+            187
+        ],
+        "timeout": 2000
+    },
+    "Mars_Exchange_Shop_Add": {
+        "recognition": "TemplateMatch",
+        "template": [
+            "fight/Mars/MarsExchangeShop_Add.png"
+        ],
+        "roi": [
+            107,
+            458,
+            175,
+            184
+        ],
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 2000
+    },
+    "Mars_Exchange_Shop_Add_Equipment_Select": {
+        "recognition": "TemplateMatch",
+        "template": "fight/Mars/MarsExchangeShop_AddEquipmentSelect.png",
+        "roi": [
+            43,
+            635,
+            644,
+            216
+        ],
+        "action": "Click",
+        "timeout": 2000
+    },
+    "Mars_Exchange_Shop_Click_Add_Button": {
+        "recognition": "TemplateMatch",
+        "template": "fight/Mars/MarsExchangeShop_ClickAddButton.png",
+        "roi": [
+            470,
+            625,
+            177,
+            133
+        ],
+        "action": "Click",
+        "timeout": 2000
+    },
+    "Mars_Exchange_Shop_Confirm_Exchange": {
+        "recognition": "TemplateMatch",
+        "template": "fight/Mars/MarsExchangeShop_ConfirmExchange.png",
+        "roi": [
+            36,
+            734,
+            649,
+            245
+        ],
+        "action": "Click",
+        "post_delay": 1000,
         "timeout": 2000
     },
     "Mars_GotoSpecialLayer": {

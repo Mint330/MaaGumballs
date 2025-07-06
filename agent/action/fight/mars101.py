@@ -325,6 +325,40 @@ class Mars101(CustomAction):
             logger.info("冒险者大人已找到钥匙捏，继续探索")
             context.run_task("Fight_OpenedDoor")
 
+    def handle_MarsExchangeShop_event(self, context: Context):
+        if context.run_recognition(
+            "Mars_Exchange_Shop",
+            context.tasker.controller.post_screencap().wait().get(),
+        ):
+            context.run_task("Mars_Exchange_Shop")
+            if context.run_recognition(
+                "Mars_Exchange_Shop_Check",
+                context.tasker.controller.post_screencap().wait().get(),
+            ):
+                logger.info("交换商店出现了短剑")
+                while context.run_recognition(
+                    "Mars_Exchange_Shop_Add",
+                    context.tasker.controller.post_screencap().wait().get(),
+                ):
+                    context.run_task("Mars_Exchange_Shop_Add")
+                    time.sleep(1)
+                    context.tasker.controller.post_click(568, 533).wait()
+                    time.sleep(1)
+                    if context.run_recognition(
+                        "Mars_Exchange_Shop_Add_Equipment_Select",
+                        context.tasker.controller.post_screencap().wait().get(),
+                    ):
+                        context.run_task("Mars_Exchange_Shop_Add_Equipment_Select")
+                    else:
+                        logger.warning("除了短剑，法杖，盾牌以外没有其他装备了")
+                        break
+                    for _ in range(10):
+                        context.tasker.controller.post_click(547, 679).wait()
+                        time.sleep(0.05)
+                    context.run_task("Mars_Exchange_Shop_Confirm_Exchange")
+
+            context.run_task("Fight_ReturnMainWindow")
+
     def handle_MarsRuinsShop_event(self, context: Context):
         image = context.tasker.controller.post_screencap().wait().get()
         if context.run_recognition("Mars_RuinsShop", image):
@@ -376,6 +410,7 @@ class Mars101(CustomAction):
         self.handle_MarsRuinsShop_event(context)
         self.handle_MarsStatue_event(context)
         self.handle_MarsReward_event(context)
+        self.handle_MarsExchangeShop_event(context)
         self.handle_EarthGate_event(context)
         if self.layers == 99:
             self.handle_before_leave_maze_event(context)
