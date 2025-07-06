@@ -155,11 +155,15 @@ class Mars101(CustomAction):
         return True
 
     def handle_android_skill_event(self, context: Context):
-        target_skill_list = ["外接皮", "机械起搏器"]
+        target_skill_list = ["外接皮", "机械起"]
         if (
             self.layers == 5 or self.layers == 6
         ) and self.is_android_skill_enabled == False:
             for skill in target_skill_list:
+                if skill == "外接皮":
+                    target_skill_checkroi = [266, 605, 96, 96]
+                if skill == "机械起":
+                    target_skill_checkroi = [363, 605, 96, 96]
                 if context.run_recognition(
                     "Mars_Android_Skill_Open",
                     context.tasker.controller.post_screencap().wait().get(),
@@ -169,7 +173,13 @@ class Mars101(CustomAction):
                         pipeline_override={
                             "Mars_Android_Skill_Choose": {
                                 "expected": skill,
-                            }
+                            },
+                            "Mars_Android_Skill_Choose_Fail": {
+                                "roi": target_skill_checkroi
+                            },
+                            "Mars_Android_Skill_Choose_Success": {
+                                "roi": target_skill_checkroi
+                            },
                         },
                     )
                     self.is_android_skill_enabled = True

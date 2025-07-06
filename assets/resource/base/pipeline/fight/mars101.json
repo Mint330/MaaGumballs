@@ -502,12 +502,21 @@
         "expected": [
             "外接皮"
         ],
+        "action": "DoNothing",
+        "next": [
+            "Mars_Android_Skill_Choose_Click"
+        ]
+    },
+    "Mars_Android_Skill_Choose_Click": {
+        "recognition": "TemplateMatch",
+        "template": "fight/Mars/Mars_Android_Skill_Choose_Click.png",
         "action": "Click",
-        "target_offset": [
-            446,
-            38,
+        "roi": "Mars_Android_Skill_Choose",
+        "roi_offset": [
             0,
-            0
+            0,
+            570,
+            80
         ],
         "next": [
             "Mars_Android_Skill_Choose_Success",
@@ -517,46 +526,50 @@
     "Mars_Android_Skill_Swipedowntoup": {
         "action": "Swipe",
         "begin": [
-            360,
-            923,
+            138,
+            881,
             1,
             1
         ],
         "end": [
-            360,
-            814,
+            142,
+            750,
             1,
             1
         ],
-        "post_delay": 500
+        "duration": 500
     },
     "Mars_Android_Skill_Choose_Fail": {
-        "recognition": "OCR",
-        "expected": [
-            "能量不足"
+        "recognition": "TemplateMatch",
+        "template": [
+            "fight/Mars/Mars_Android_Skill_Choose_Fail.png",
+            "fight/Mars/Mars_Android_Skill_Choose_Fail2.png"
         ],
         "roi": [
-            114,
-            358,
-            477,
-            103
+            266,
+            605,
+            96,
+            96
         ],
+        "threshold": 0.9,
         "timeout": 3000,
         "next": [
             "Fight_ReturnMainWindow"
         ]
     },
     "Mars_Android_Skill_Choose_Success": {
-        "recognition": "OCR",
-        "expected": [
-            "激活成功"
+        "recognition": "TemplateMatch",
+        "template": [
+            "fight/Mars/Mars_Android_Skill_Choose_Success.png",
+            "fight/Mars/Mars_Android_Skill_Choose_Success2.png"
         ],
         "roi": [
-            114,
-            358,
-            477,
-            103
+            266,
+            605,
+            96,
+            96
         ],
+        "threshold": 0.9,
         "timeout": 3000,
         "next": [
             "Fight_ReturnMainWindow"
