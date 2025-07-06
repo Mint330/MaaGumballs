@@ -383,7 +383,7 @@ class Mars101(CustomAction):
             img = context.tasker.controller.post_screencap().wait().get()
             if context.run_recognition("Fight_FindDragon", img):
                 logger.info("是神龙,俺,俺们有救了！！！")
-                fightUtils.dragonwish("工资", context)
+                fightUtils.dragonwish("马尔斯", context)
                 logger.info("神龙带肥家lo~")
 
             return False
@@ -478,6 +478,7 @@ class Mars_Fight_ClearCurrentLayer(CustomAction):
         # 进行特殊配置以适应Mars
         self.fightProcessor.grid_count = 40
         self.fightProcessor.hit_monster_count = 3
+        self.fightProcessor.targetWish = "马尔斯"
 
     # 执行函数
     def run(
