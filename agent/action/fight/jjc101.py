@@ -117,23 +117,18 @@ class JJC101(CustomAction):
             context.run_task("Fight_ReturnMainWindow")
             self.isTitle_L1 = True
         elif (self.layers == 36 or self.layers == 37) and self.isTitle_L36 == False:
-
             fightUtils.title_learn("战斗", 1, "见习战士", 1, context)
             fightUtils.title_learn("战斗", 2, "战士", 3, context)
             fightUtils.title_learn("战斗", 3, "剑舞者", 3, context)
             fightUtils.title_learn("战斗", 4, "炎龙武士", 3, context)
             fightUtils.title_learn("战斗", 5, "毁灭公爵", 1, context)
-
-            context.run_task("Fight_ReturnMainWindow")
+            fightUtils.title_learn_branch("战斗", 5, "生命强化", 3, context)
+            fightUtils.title_learn_branch("战斗", 5, "攻击强化", 3, context)
             fightUtils.title_learn("魔法", 1, "魔法学徒", 3, context)
             fightUtils.title_learn("魔法", 2, "白袍法师", 1, context)
             fightUtils.title_learn("魔法", 3, "祭司", 1, context)
             fightUtils.title_learn("魔法", 4, "气系大师", 1, context)
             fightUtils.title_learn("魔法", 5, "传奇法师", 1, context)
-
-            context.run_task("Fight_ReturnMainWindow")
-            fightUtils.title_learn_branch("战斗", 5, "生命强化", 3, context)
-            fightUtils.title_learn_branch("战斗", 5, "攻击强化", 3, context)
             fightUtils.title_learn_branch("魔法", 5, "生命强化", 1, context)
             fightUtils.title_learn_branch("魔法", 5, "魔力强化", 3, context)
 
@@ -142,14 +137,11 @@ class JJC101(CustomAction):
             context.run_task("Fight_ReturnMainWindow")
             self.isTitle_L36 = True
         elif (self.layers == 63 or self.layers == 64) and self.isTitle_L63 == False:
-
             fightUtils.title_learn("冒险", 1, "寻宝者", 2, context)
             fightUtils.title_learn("冒险", 2, "探险家", 1, context)
             fightUtils.title_learn("冒险", 3, "暗行者", 1, context)
             fightUtils.title_learn("冒险", 4, "魔盗", 1, context)
             fightUtils.title_learn("冒险", 5, "异界游侠", 1, context)
-
-            context.run_task("Fight_ReturnMainWindow")
             fightUtils.title_learn("魔法", 2, "白袍法师", 3, context)
             fightUtils.title_learn_branch("冒险", 5, "生命强化", 3, context)
             fightUtils.title_learn_branch("魔法", 5, "魔法强化", 3, context)
@@ -171,7 +163,7 @@ class JJC101(CustomAction):
             CurrentHP = float(StatusDetail["当前生命值"])
             MaxHp = float(StatusDetail["最大生命值"])
             HPStatus = CurrentHP / MaxHp
-
+            logger.info(f"current hp is {CurrentHP}, HPStatus is {HPStatus}")
             if HPStatus < 0.8:
                 while HPStatus < 0.8:
                     if not fightUtils.cast_magic("光", "神恩术", context):
@@ -621,46 +613,12 @@ class Fight_TestAction(CustomAction):
         context: Context,
         argv: CustomAction.RunArg,
     ) -> CustomAction.RunResult:
-        # fightUtils.autoOpenPicup(context)
-
-        # fightUtils.checkGumballsStatusV2(context)
-        # fightUtils.title_learn_branch("魔法", 5, "魔力强化", 1, context)
-        # fightUtils.title_learn_branch("魔法", 5, "生命强化", 2, context)
-
-        # fightUtils.title_learn("魔法", 2, "白袍法师", 3, context)
-        # fightUtils.title_learn("魔法", 3, "祭司", 3, context)
-        # fightUtils.title_learn("魔法", 4, "气系大师", 3, context)
-
-        # fightUtils.disassembleEquipment(
-        #     6,
-        #     [
-        #         "土系魔法书",
-        #         "气系魔法书",
-        #         "火系魔法书",
-        #         "水系魔法书",
-        #         "光系魔法书",
-        #         "暗系魔法书",
-        #         "执政官铠甲",
-        #         "骨灰指轮",
-        #         "次元靴",
-        #         "大德鲁伊斗篷",
-        #         "法老面具",
-        #         "格斗大师拳套",
-        #         "圣者的日记",
-        #         "伊斯坦丁",
-        #     ],
-        #     context,
-        # )
-
-        # fightUtils.title_learn("魔法", 3, "祭司", 1, context)
-        # fightUtils.title_learn("魔法", 4, "气系大师", 1, context)
-        # fightUtils.title_learn("魔法", 5, " 传奇法师", 1, context)
-        # context.run_task("Fight_ReturnMainWindow")
-        fightUtils.check_magic("火", "火球术", context)
-        # fightUtils.title_learn_branch("冒险", 5, "魔法强化", 3, context)
-        # fightUtils.title_learn_branch("冒险", 5, "攻击强化", 3, context)
-        # fightUtils.title_learn_branch("冒险", 5, "生命强化", 3, context)
-        # context.run_task("Fight_ReturnMainWindow")
+        context.run_task("Fight_ReturnMainWindow")
+        fightUtils.title_learn("魔法", 1, "魔法学徒", 3, context)
+        fightUtils.title_learn("魔法", 2, "黑袍法师", 3, context)
+        fightUtils.title_learn("魔法", 3, "咒术师", 3, context)
+        fightUtils.title_learn("魔法", 4, "土系大师", 3, context)
+        fightUtils.title_learn("魔法", 5, "位面先知", 1, context)
 
         return CustomAction.RunResult(success=True)
 

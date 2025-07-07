@@ -79,8 +79,6 @@ class Mars101(CustomAction):
             fightUtils.title_learn("魔法", 3, "咒术师", 3, context)
             fightUtils.title_learn("魔法", 4, "土系大师", 3, context)
             fightUtils.title_learn("魔法", 5, "位面先知", 1, context)
-            context.run_task("Fight_ReturnMainWindow")
-
             fightUtils.title_learn_branch("魔法", 5, "魔力强化", 3, context)
             fightUtils.title_learn_branch("魔法", 5, "生命强化", 3, context)
             fightUtils.title_learn_branch("魔法", 5, "魔法强化", 3, context)
@@ -95,19 +93,14 @@ class Mars101(CustomAction):
             fightUtils.title_learn("战斗", 2, "战士", 3, context)
             fightUtils.title_learn("战斗", 3, "剑舞者", 3, context)
             fightUtils.title_learn("战斗", 4, "大剑师", 3, context)
-            context.run_task("Fight_ReturnMainWindow")
-
             fightUtils.title_learn("冒险", 1, "寻宝者", 3, context)
             fightUtils.title_learn("冒险", 2, "勘探家", 3, context)
             fightUtils.title_learn("冒险", 3, "锻造师", 3, context)
             fightUtils.title_learn("冒险", 4, "武器大师", 3, context)
             fightUtils.title_learn("冒险", 5, "大铸剑师", 1, context)
-            context.run_task("Fight_ReturnMainWindow")
-
             fightUtils.title_learn_branch("冒险", 5, "攻击强化", 3, context)
             fightUtils.title_learn_branch("冒险", 5, "生命强化", 3, context)
             fightUtils.title_learn_branch("冒险", 5, "魔法强化", 3, context)
-            context.run_task("Fight_ReturnMainWindow")
 
             if fightUtils.title_check("巨龙", context):
                 fightUtils.title_learn("巨龙", 1, "亚龙血统", 3, context)
@@ -115,12 +108,9 @@ class Mars101(CustomAction):
                 fightUtils.title_learn("巨龙", 3, "中级龙族血统", 3, context)
                 fightUtils.title_learn("巨龙", 4, "高级龙族血统", 3, context)
                 fightUtils.title_learn("巨龙", 5, "邪龙血统", 1, context)
-                context.run_task("Fight_ReturnMainWindow")
-
                 fightUtils.title_learn_branch("巨龙", 5, "生命强化", 3, context)
-                # fightUtils.title_learn_branch("巨龙", 5, "攻击强化", 3, context)
                 fightUtils.title_learn_branch("巨龙", 5, "攻击强化", 3, context)
-                context.run_task("Fight_ReturnMainWindow")
+
             context.run_task("Fight_ReturnMainWindow")
             context.run_task("Save_Status")
             context.run_task("Fight_ReturnMainWindow")
@@ -131,14 +121,16 @@ class Mars101(CustomAction):
         # 检查冈布奥状态
         tempNum = self.layers % 10
         if (
-            (50 <= self.layers <= 79) and (tempNum == 1 or tempNum == 5 or tempNum == 9)
+            (11 <= self.layers <= 79) and (tempNum == 1 or tempNum == 5 or tempNum == 9)
         ) or self.layers >= 80:
             StatusDetail: dict = fightUtils.checkGumballsStatusV2(context)
             CurrentHP = float(StatusDetail["当前生命值"])
             MaxHp = float(StatusDetail["最大生命值"])
             HPStatus = CurrentHP / MaxHp
+            logger.info(f"current hp is {CurrentHP}, HPStatus is {HPStatus}")
 
             if HPStatus < 0.8:
+                fightUtils.cast_magic_special("生命颂歌", context)
                 while HPStatus < 0.8:
                     if not fightUtils.cast_magic("光", "神恩术", context):
                         if not fightUtils.cast_magic("水", "治疗术", context):
@@ -196,14 +188,22 @@ class Mars101(CustomAction):
 
             for _ in range(3):
                 fightUtils.cast_magic_special("生命颂歌", context)
-
-            actions = [
-                lambda: fightUtils.cast_magic("光", "祝福术", context),
-                lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
-                lambda: fightUtils.cast_magic("水", "冰锥术", context),
-                lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
-                lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
-            ]
+            actions = []
+            if self.layers <= 70:
+                actions = [
+                    lambda: fightUtils.cast_magic("光", "祝福术", context),
+                    lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
+                    lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
+                    lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
+                ]
+            elif self.layers >= 80 and self.layers <= 100:
+                actions = [
+                    lambda: fightUtils.cast_magic("光", "祝福术", context),
+                    lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
+                    lambda: fightUtils.cast_magic("水", "冰锥术", context),
+                    lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
+                    lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
+                ]
             index = 0
             for _ in range(10):
                 # 执行当前动作
@@ -258,6 +258,7 @@ class Mars101(CustomAction):
 
     def handle_before_leave_maze_event(self, context: Context):
         logger.info("准备结算离开迷宫")
+        context.run_task("Fight_ReturnMainWindow")
         for _ in range(3):
             fightUtils.cast_magic_special("生命颂歌", context)
 
