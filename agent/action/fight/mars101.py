@@ -21,6 +21,7 @@ class Mars101(CustomAction):
         self.useEarthGate = 0
         self.isShutDownTitan = False
         self.is_android_skill_enabled = False
+        self.isLeaveMaze = False
         self.layers = 1
 
     def initialize(self, context: Context):
@@ -120,6 +121,7 @@ class Mars101(CustomAction):
                 # fightUtils.title_learn_branch("巨龙", 5, "攻击强化", 3, context)
                 fightUtils.title_learn_branch("巨龙", 5, "攻击强化", 3, context)
                 context.run_task("Fight_ReturnMainWindow")
+            context.run_task("Fight_ReturnMainWindow")
             context.run_task("Save_Status")
             context.run_task("Fight_ReturnMainWindow")
             self.isTitle_L76 = True
@@ -228,13 +230,12 @@ class Mars101(CustomAction):
         return True
 
     def handle_EarthGate_event(self, context: Context):
-        if (self.layers == 67 or self.layers == 68) and self.useEarthGate < 2:
-            if fightUtils.cast_magic("土", "大地之门", context):
-                self.useEarthGate += 1
-            elif self.layers == 71:
-                self.useEarthGate = 2
-            self.handle_clearCurLayer_event(context)
-            # 是否检查大地成功
+        if (self.layers > 60) and (self.layers % 10 == 5) and self.useEarthGate < 2:
+            if fightUtils.check_magic("土", "大地之门", context):
+                fightUtils.cast_magic("气", "静电术", context)
+                if fightUtils.cast_magic("土", "大地之门", context):
+                    self.useEarthGate += 1
+                self.handle_clearCurLayer_event(context)
 
     def handle_preLayers_event(self, context: Context):
         self.handle_android_skill_event(context)
@@ -306,6 +307,7 @@ class Mars101(CustomAction):
                     break
 
         logger.info("可以出图了")
+        self.isLeaveMaze = True
         # 到这可以出图了
 
     def handle_downstair_event(self, context: Context):
@@ -326,7 +328,7 @@ class Mars101(CustomAction):
             context.run_task("Fight_OpenedDoor")
 
     def handle_MarsExchangeShop_event(self, context: Context):
-        if context.run_recognition(
+        if self.layers > 30 and context.run_recognition(
             "Mars_Exchange_Shop",
             context.tasker.controller.post_screencap().wait().get(),
         ):
@@ -336,26 +338,27 @@ class Mars101(CustomAction):
                 context.tasker.controller.post_screencap().wait().get(),
             ):
                 logger.info("交换商店出现了短剑")
-                while context.run_recognition(
+                if context.run_recognition(
                     "Mars_Exchange_Shop_Add",
                     context.tasker.controller.post_screencap().wait().get(),
                 ):
-                    context.run_task("Mars_Exchange_Shop_Add")
-                    time.sleep(1)
-                    context.tasker.controller.post_click(568, 533).wait()
-                    time.sleep(1)
-                    if context.run_recognition(
-                        "Mars_Exchange_Shop_Add_Equipment_Select",
-                        context.tasker.controller.post_screencap().wait().get(),
-                    ):
-                        context.run_task("Mars_Exchange_Shop_Add_Equipment_Select")
-                    else:
-                        logger.warning("除了短剑，法杖，盾牌以外没有其他装备了")
-                        break
-                    for _ in range(10):
-                        context.tasker.controller.post_click(547, 679).wait()
-                        time.sleep(0.05)
-                    context.run_task("Mars_Exchange_Shop_Confirm_Exchange")
+                    for _ in range(5):
+                        context.run_task("Mars_Exchange_Shop_Add")
+                        time.sleep(1)
+                        context.tasker.controller.post_click(568, 533).wait()
+                        time.sleep(1)
+                        if context.run_recognition(
+                            "Mars_Exchange_Shop_Add_Equipment_Select",
+                            context.tasker.controller.post_screencap().wait().get(),
+                        ):
+                            context.run_task("Mars_Exchange_Shop_Add_Equipment_Select")
+                        else:
+                            logger.warning("除了短剑，法杖，盾牌以外没有其他装备了")
+                            break
+                        for _ in range(10):
+                            context.tasker.controller.post_click(547, 679).wait()
+                            time.sleep(0.05)
+                        context.run_task("Mars_Exchange_Shop_Confirm_Exchange")
 
             context.run_task("Fight_ReturnMainWindow")
 
@@ -412,7 +415,10 @@ class Mars101(CustomAction):
         self.handle_MarsReward_event(context)
         self.handle_MarsExchangeShop_event(context)
         self.handle_EarthGate_event(context)
-        if self.layers == 99:
+        if self.layers >= 97 and context.run_recognition(
+            "Mars_GotoSpecialLayer",
+            context.tasker.controller.post_screencap().wait().get(),
+        ):
             self.handle_before_leave_maze_event(context)
         else:
             self.handle_downstair_event(context)
@@ -504,8 +510,8 @@ class Mars101(CustomAction):
             # 检查是否触发战后事件
             self.handle_postLayers_event(context)
 
-            if self.layers == 99:
-                logger.info(f"current layers {self.layers}, 开始退出agent")
+            if self.isLeaveMaze:
+                logger.info(f"current layers {self.layers},出图准备完成,开始退出agent")
                 break
 
         logger.info(f"马尔斯探索结束，当前到达{self.layers}层")

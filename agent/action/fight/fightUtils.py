@@ -124,6 +124,43 @@ def cast_magic(Type: str, MagicName: str, context: Context, TargetPos: tuple = (
     return True
 
 
+def check_magic(Type: str, MagicName: str, context: Context):
+    """施放指定类型的魔法
+
+    Args:
+        Type: 魔法的类型，如 '火', '土', '气' 等
+        MagicName: 具体的魔法名称，如 '祝福术', '石肤术' 等
+        context: 游戏上下文对象，包含当前状态信息
+
+    Returns:
+        执行结果，存在返回 True, 失败返回 False
+
+    Example:
+        >>> cast_magic("火", "火球术", context)
+        True
+    """
+
+    # run
+    context.run_task(
+        "Fight_Magic_Elemental",
+        pipeline_override={"Fight_Magic_Elemental": {"next": [MagicType[Type]]}},
+    )
+
+    image = context.tasker.controller.post_screencap().wait().get()
+    if context.run_recognition(
+        "Fight_Magic_Cast",
+        image,
+        pipeline_override={"Fight_Magic_Cast": {"expected": MagicName}},
+    ):
+        logger.info(f"找到了魔法:{MagicName}")
+        context.run_task("BackText")
+    else:
+        logger.info(f"没有找到对应的魔法:{MagicName}")
+        context.run_task("BackText")
+        return False
+    return True
+
+
 def cast_magic_special(MagicName: str, context: Context):
     """施放特殊类型的魔法
 
