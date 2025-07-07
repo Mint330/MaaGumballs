@@ -236,7 +236,7 @@ class Mars101(CustomAction):
         return True
 
     def handle_EarthGate_event(self, context: Context):
-        if (self.layers > 60) and (self.layers % 10 == 5) and self.useEarthGate < 2:
+        if (self.layers > 60) and (self.layers % 10 == 7) and self.useEarthGate < 2:
             if fightUtils.check_magic("土", "大地之门", context):
                 fightUtils.cast_magic("气", "静电场", context)
                 if fightUtils.cast_magic("土", "大地之门", context):
