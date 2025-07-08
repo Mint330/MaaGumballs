@@ -135,10 +135,10 @@
             "fight/Mars/MarsBossReward_5w.png"
         ],
         "roi": [
-            35,
-            463,
+            29,
+            365,
             662,
-            489
+            372
         ],
         "action": "Click",
         "timeout": 2000,
@@ -154,10 +154,10 @@
             "fight/Mars/MarsBossReward_MP.png"
         ],
         "roi": [
-            35,
-            463,
+            29,
+            365,
             662,
-            489
+            372
         ],
         "action": "Click",
         "timeout": 2000,
