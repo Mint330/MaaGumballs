@@ -335,7 +335,7 @@ class Mars101(CustomAction):
             context.run_task("Fight_OpenedDoor")
 
     def handle_MarsExchangeShop_event(self, context: Context):
-        if self.layers > 30 and context.run_recognition(
+        if (self.layers > 30 or self.useEarthGate > 0) and context.run_recognition(
             "Mars_Exchange_Shop",
             context.tasker.controller.post_screencap().wait().get(),
         ):
@@ -352,7 +352,7 @@ class Mars101(CustomAction):
                     for _ in range(5):
                         context.run_task("Mars_Exchange_Shop_Add")
                         time.sleep(1)
-                        context.tasker.controller.post_click(568, 533).wait()
+                        context.run_task("Mars_Exchange_Shop_Add_Equipment_Choose")
                         time.sleep(1)
                         if context.run_recognition(
                             "Mars_Exchange_Shop_Add_Equipment_Select",
@@ -362,9 +362,32 @@ class Mars101(CustomAction):
                         else:
                             logger.warning("除了短剑，法杖，盾牌以外没有其他装备了")
                             break
-                        for _ in range(10):
-                            context.tasker.controller.post_click(547, 679).wait()
-                            time.sleep(0.05)
+                        if AddButtonRecoDetail := context.run_recognition(
+                            "Mars_Exchange_Shop_ClickAddButton",
+                            context.tasker.controller.post_screencap().wait().get(),
+                            pipeline_override={
+                                "Mars_Exchange_Shop_ClickAddButton": {
+                                    "recognition": "TemplateMatch",
+                                    "template": [
+                                        "fight/Mars/MarsExchangeShop_ClickAddButton.png",
+                                    ],
+                                    "roi": [495, 632, 126, 110],
+                                    "timeout": 2000,
+                                }
+                            },
+                        ):
+                            box = AddButtonRecoDetail.best_result.box
+                            AddButton_center_x, AddButton_center_y = (
+                                box[0] + box[2] // 2,
+                                box[1] + box[3] // 2,
+                            )
+                            for _ in range(10):
+                                context.tasker.controller.post_click(
+                                    AddButton_center_x, AddButton_center_y
+                                ).wait()
+                                time.sleep(0.05)
+                        else:
+                            logger.warning("没找到add按钮")
                         context.run_task("Mars_Exchange_Shop_Confirm_Exchange")
 
             context.run_task("Fight_ReturnMainWindow")
