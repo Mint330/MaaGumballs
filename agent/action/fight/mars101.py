@@ -72,6 +72,7 @@ class Mars101(CustomAction):
             fightUtils.title_learn("魔法", 1, "魔法学徒", 3, context)
             context.run_task("Fight_ReturnMainWindow")
             self.isTitle_L3 = True
+            return True
 
         elif (self.layers == 58 or self.layers == 59) and self.isTitle_L58 == False:
             fightUtils.title_learn("魔法", 1, "魔法学徒", 3, context)
@@ -90,6 +91,7 @@ class Mars101(CustomAction):
             context.run_task("Save_Status")
             context.run_task("Fight_ReturnMainWindow")
             self.isTitle_L58 = True
+            return True
 
         elif self.layers == 76 or self.layers == 77 and self.isTitle_L76 == False:
             fightUtils.title_learn("战斗", 1, "见习战士", 3, context)
@@ -118,10 +120,11 @@ class Mars101(CustomAction):
             context.run_task("Save_Status")
             context.run_task("Fight_ReturnMainWindow")
             self.isTitle_L76 = True
+            return True
+        return False
 
     def Check_DefaultStatus(self, context: Context):
-
-        # 检查冈布奥状态
+        """检查冈布奥状态"""
         tempNum = self.layers % 10
         if (
             (11 <= self.layers <= 79) and (tempNum == 1 or tempNum == 5 or tempNum == 9)
@@ -168,11 +171,11 @@ class Mars101(CustomAction):
                 if skill == "机械起":
                     target_skill_checkroi = [363, 605, 96, 96]
                 if context.run_recognition(
-                    "Mars_Android_Skill_Open",
+                    "Mars_Android_Skill",
                     context.tasker.controller.post_screencap().wait().get(),
                 ):
                     context.run_task(
-                        "Mars_Android_Skill_Open",
+                        "Mars_Android_Skill",
                         pipeline_override={
                             "Mars_Android_Skill_Choose": {
                                 "expected": skill,
@@ -192,9 +195,7 @@ class Mars101(CustomAction):
             "Fight_OpenedDoor", context.tasker.controller.post_screencap().wait().get()
         ):
             context.run_task("Fight_OpenedDoor")
-
         else:
-
             for _ in range(3):
                 fightUtils.cast_magic_special("生命颂歌", context)
             actions = []
@@ -244,7 +245,9 @@ class Mars101(CustomAction):
                 fightUtils.cast_magic("气", "静电场", context)
                 if fightUtils.cast_magic("土", "大地之门", context):
                     self.useEarthGate += 1
+                    return True
                 self.handle_clearCurLayer_event(context)
+        return False
 
     def handle_preLayers_event(self, context: Context):
         self.handle_android_skill_event(context)
@@ -356,42 +359,24 @@ class Mars101(CustomAction):
                 ):
                     for _ in range(5):
                         context.run_task("Mars_Exchange_Shop_Add")
-                        time.sleep(1)
-                        context.run_task("Mars_Exchange_Shop_Add_Equipment_Choose")
-                        time.sleep(1)
                         if context.run_recognition(
                             "Mars_Exchange_Shop_Add_Equipment_Select",
                             context.tasker.controller.post_screencap().wait().get(),
                         ):
                             context.run_task("Mars_Exchange_Shop_Add_Equipment_Select")
                         else:
-                            logger.info(
-                                "除了短剑，法杖，盾牌以外没有其他装备了,回到主页面继续下楼"
-                            )
-                            context.run_task("Fight_MainWindow")
+                            logger.info("没有短剑，法杖和盾牌之外的装备了,跳过这次交换")
                             break
+
                         if AddButtonRecoDetail := context.run_recognition(
-                            "Mars_Exchange_Shop_ClickAddButton",
+                            "Mars_Exchange_Shop_AddButtonReco",
                             context.tasker.controller.post_screencap().wait().get(),
-                            pipeline_override={
-                                "Mars_Exchange_Shop_ClickAddButton": {
-                                    "recognition": "TemplateMatch",
-                                    "template": [
-                                        "fight/Mars/MarsExchangeShop_ClickAddButton.png",
-                                    ],
-                                    "roi": [495, 632, 126, 110],
-                                    "timeout": 2000,
-                                }
-                            },
                         ):
                             box = AddButtonRecoDetail.best_result.box
-                            AddButton_center_x, AddButton_center_y = (
-                                box[0] + box[2] // 2,
-                                box[1] + box[3] // 2,
-                            )
                             for _ in range(10):
                                 context.tasker.controller.post_click(
-                                    AddButton_center_x, AddButton_center_y
+                                    box[0] + box[2] // 2,
+                                    box[1] + box[3] // 2,
                                 ).wait()
                                 time.sleep(0.05)
                         else:
@@ -412,6 +397,7 @@ class Mars101(CustomAction):
             else:
                 logger.info("这个交换商店没有短剑, 去其他楼层找吧~")
             context.run_task("Fight_ReturnMainWindow")
+            return True
 
     def handle_MarsRuinsShop_event(self, context: Context):
         if context.run_recognition(
@@ -419,32 +405,42 @@ class Mars101(CustomAction):
         ):
             logger.info("触发Mars商店事件")
             context.run_task("Mars_RuinsShop")
+            return True
+        return False
 
     def handle_MarsReward_event(self, context: Context):
-        if self.layers % 2 == 1 or context.run_recognition(
-            "Mars_Reward", context.tasker.controller.post_screencap().wait().get()
-        ):
+        normalReward = self.layers % 2 == 1
+        bossReward = self.layers >= 30 and self.layers % 10 == 0
+        if not (normalReward or bossReward):
+            return False
+
+        img = context.tasker.controller.post_screencap().wait().get()
+        if normalReward and context.run_recognition("Mars_Reward", img):
             logger.info("触发Mars奖励事件")
             context.run_task("Mars_Reward")
-        if (
-            self.layers >= 30
-            and self.layers % 10 == 0
-            and context.run_recognition(
-                "Mars_BossReward",
-                context.tasker.controller.post_screencap().wait().get(),
-            )
-        ):
+            return True
+
+        if bossReward and context.run_recognition("Mars_BossReward", img):
             logger.info("触发MarsBoss奖励事件")
             context.run_task("Mars_BossReward")
-        return True
+            return True
+
+        return False
 
     def handle_MarsBody_event(self, context: Context):
-        while context.run_recognition(
-            "Mars_Body", context.tasker.controller.post_screencap().wait().get()
-        ):
+        img = context.tasker.controller.post_screencap().wait().get()
+        if bodyRecoDetail := context.run_recognition("Mars_Body", img):
             logger.info("触发Mars摸金事件")
-            context.run_task("Mars_Body")
-        return True
+            for body in bodyRecoDetail.filterd_results:
+                box = body.box
+                context.tasker.controller.post_click(
+                    box[0] + box[2] // 2,
+                    box[1] + box[3] // 2,
+                ).wait()
+                time.sleep(1)
+                context.run_task("Mars_Inter_Confirm")
+            return True
+        return False
 
     def handle_MarsStele_event(self, context: Context):
         if context.run_recognition(
@@ -452,6 +448,7 @@ class Mars101(CustomAction):
         ):
             logger.info("触发Mars斩断事件")
             context.run_task("Mars_Stele")
+            context.run_task("Mars_Fight_ClearCurrentLayer")
             time.sleep(1)
 
     def handle_MarsStatue_event(self, context: Context):
@@ -508,8 +505,6 @@ class Mars101(CustomAction):
         return True
 
     def handle_interrupt_event(self, context: Context):
-        # 检测卡剧情,等待1秒，如果出现卡剧情，则重新探索
-        time.sleep(1)
         image = context.tasker.controller.post_screencap().wait().get()
         if context.run_recognition(
             "JJC_Inter_Confirm",
