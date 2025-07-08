@@ -365,7 +365,7 @@ class Mars101(CustomAction):
                         ):
                             context.run_task("Mars_Exchange_Shop_Add_Equipment_Select")
                         else:
-                            logger.warning(
+                            logger.info(
                                 "除了短剑，法杖，盾牌以外没有其他装备了,回到主页面继续下楼"
                             )
                             context.run_task("Fight_MainWindow")
@@ -396,7 +396,7 @@ class Mars101(CustomAction):
                                 time.sleep(0.05)
                         else:
                             logger.warning(
-                                "一般不会到这里,进入这里说明离开交换商店了。"
+                                "一般不会到这里,进入这里说明由于未知原因离开交换商店了。"
                             )
                         context.run_task("Mars_Exchange_Shop_Confirm_Exchange")
 
@@ -407,7 +407,10 @@ class Mars101(CustomAction):
                         ):
                             logger.info("已经交换了十把短剑~")
                             break
-
+                        else:
+                            logger.info("可用于更换的战利品没有了, 去获取更多吧~")
+            else:
+                logger.info("这个交换商店没有短剑, 去其他楼层找吧~")
             context.run_task("Fight_ReturnMainWindow")
 
     def handle_MarsRuinsShop_event(self, context: Context):
