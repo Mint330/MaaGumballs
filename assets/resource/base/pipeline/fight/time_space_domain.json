@@ -43,19 +43,51 @@
     },
     "TSD_GetInDomain_Confirm": {
         "recognition": "TemplateMatch",
-        "template": "fight/time_space_domain/wormhole.png",
+        "template": [
+            "fight/time_space_domain/domain1.png",
+            "fight/time_space_domain/domain2.png"
+        ],
         "roi": [
             213,
             567,
             277,
             216
         ],
-        "action": "DoNothing",
+        "action": "Click",
         "post_delay": 3000,
         "timeout": 2000,
         "next": [
+            "TSD_CheckInTSD"
+        ],
+        "interrupt":[
+            "TSD_CheckInOD"
+        ]
+    },
+    "TSD_CheckInTSD":{
+        "recognition": "OCR",
+        "expected": [
+            "时空域"
+        ],
+        "roi": [
+            153,726,82,35
+        ],
+        "post_delay": 2000,
+        "next":[
             "TSD_Explore"
         ]
+    },
+    "TSD_CheckInOD":{
+        "recognition": "OCR",
+        "expected": [
+            "秩序域"
+        ],
+        "roi": [
+            153,726,82,35
+        ],
+        "action": "StopTask",
+        "focus": {
+            "succeeded":"[color:red]这不是时空域，请冒险者大人快来看看~~[/color]"
+        }
     },
     "TSD_Explore": {
         "action": "Custom",
@@ -262,12 +294,13 @@
             756
         ],
         "action": "Click",
-        "post_delay": 500,
-        "timeout": 500,
+        "post_delay": 1000,
+        "timeout": 2000,
         "next": [
             "TSD_ClickFleetButton"
         ],
         "interrupt": [
+            "TSD_SelectCancelButton",
             "ClickCenterBelow_500ms"
         ]
     },
@@ -284,7 +317,7 @@
         ],
         "action": "Click",
         "post_delay": 500,
-        "timeout": 500,
+        "timeout": 2000,
         "next": [
             "TSD_SelectFreeFleetInList"
         ]
@@ -302,7 +335,7 @@
         ],
         "action": "Click",
         "post_delay": 500,
-        "timeout": 500
+        "timeout": 2000
     },
     "TSD_SelectHighestFleet": {
         "recognition": "OCR",
@@ -317,7 +350,7 @@
         ],
         "action": "Click",
         "post_delay": 500,
-        "timeout": 500,
+        "timeout": 2000,
         "next": [
             "TSD_ClickAttackButton"
         ],
@@ -348,6 +381,9 @@
         "enabled": false
     },
     "TSD_CheckMonsterBossTask": {
+        "enabled": false
+    },
+    "TSD_CheckMonsterPlanetTask": {
         "enabled": false
     },
     "TSD_SelectCancelButton":{
