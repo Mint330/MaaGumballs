@@ -80,7 +80,7 @@ class Mars101(CustomAction):
         1. 检查58层的称号: 位面点满即可
         3. 检查76层的称号: 位面，大铸剑师，大剑师都点满
         """
-        if (self.layers == 1 or self.layers == 2) and self.isTitle_L1 == False:
+        if (self.layers >= 1 and self.layers <= 3) and self.isTitle_L1 == False:
             fightUtils.title_learn("魔法", 1, "魔法学徒", 3, context)
             context.run_task("Fight_ReturnMainWindow")
             self.isTitle_L1 = True
@@ -175,15 +175,15 @@ class Mars101(CustomAction):
                 self.isGetTitanFoot = True
 
     def handle_android_skill_event(self, context: Context):
-        target_skill_list = ["外接皮", "机械起"]
+        target_skill_list = ["外接皮", "生物导体"]
         if (
             self.layers == 5 or self.layers == 6
         ) and self.is_android_skill_enabled == False:
             for skill in target_skill_list:
                 if skill == "外接皮":
                     target_skill_checkroi = [266, 605, 96, 96]
-                if skill == "机械起":
-                    target_skill_checkroi = [363, 605, 96, 96]
+                if skill == "生物导体":
+                    target_skill_checkroi = [550, 605, 96, 96]
                 if context.run_recognition(
                     "Mars_Android_Skill",
                     context.tasker.controller.post_screencap().wait().get(),
