@@ -244,7 +244,8 @@
                 "自动肉鸽时使用钻石购买体力",
                 "目标出图楼层",
                 "目标大地数量",
-                "开启自动拾取"
+                "开启自动拾取",
+                "神器选择"
             ],
             "pipeline_override": {
                 "Select_WorldTree_InputBox_Text": {
@@ -253,14 +254,11 @@
                 "Select_Drug_Next": {
                     "template": "items/电能试剂.png"
                 },
-                "Select_Artifact_Next": {
-                    "template": "equipments/7level/冒险家竖琴.png"
-                },
                 "select_InputBox_Text1": {
                     "input_text": "太阳冈布奥"
                 },
                 "select_InputBox_Text2": {
-                    "input_text": "天启者"
+                    "input_text": "波塞冬"
                 }
             },
             "doc": [
@@ -719,6 +717,26 @@
                 }
             ]
         },
+        "神器选择": {
+            "cases": [
+                {
+                    "name": "冒险家竖琴",
+                    "pipeline_override": {
+                        "Select_Artifact_Next": {
+                            "template": "equipments/7level/冒险家竖琴.png"
+                        }
+                    }
+                },
+                {
+                    "name": "挑战者大剑",
+                    "pipeline_override": {
+                        "Select_Artifact_Next": {
+                            "template": "equipments/7level/挑战者大剑.png"
+                        }
+                    }
+                }
+            ]
+        },
         "目标出图楼层": {
             "cases": [
                 {
@@ -734,6 +752,14 @@
                     "pipeline_override": {
                         "Mars_Target_Layer_Setting": {
                             "expected": "99"
+                        }
+                    }
+                },
+                {
+                    "name": "109",
+                    "pipeline_override": {
+                        "Mars_Target_Layer_Setting": {
+                            "expected": "109"
                         }
                     }
                 }
@@ -1058,7 +1084,7 @@
                 }
             ]
         },
-        "是否清理星球小怪":{
+        "是否清理星球小怪": {
             "cases": [
                 {
                     "name": "no",
@@ -1075,11 +1101,10 @@
                             "enabled": true
                         }
                     }
-
                 }
             ]
         },
-        "出战舰队数量":{
+        "出战舰队数量": {
             "default_case": "1",
             "cases": [
                 {

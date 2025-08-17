@@ -14,6 +14,8 @@ import json
 boss_x, boss_y = 360, 800
 boss_slave_1_x, boss_slave_1_y = 100, 660
 boss_slave_2_x, boss_slave_2_y = 640, 660
+special_layer_monster_1_x, special_layer_monster_1_y = 90, 650
+special_layer_monster_2_x, special_layer_monster_2_y = 363, 650
 
 
 @AgentServer.custom_action("Mars101")
@@ -25,6 +27,7 @@ class Mars101(CustomAction):
         self.isTitle_L76 = False
         self.useEarthGate = 0
         self.isGetTitanFoot = False
+        self.isGetMagicAssist = False
         self.is_android_skill_enabled = False
         self.isLeaveMaze = False
         self.isAutoPickup = False
@@ -128,14 +131,15 @@ class Mars101(CustomAction):
             return True
         return False
 
+    @timing_decorator
     def Check_DefaultStatus(self, context: Context):
         """检查冈布奥状态"""
         tempNum = self.layers % 10
         if (
             (11 <= self.layers <= 79) and (tempNum == 1 or tempNum == 5 or tempNum == 9)
         ) or self.layers >= 80:
-            # 如果大地回来，低于50层就不检查状态
-            if (11 <= self.layers <= 49) and self.useEarthGate > 0:
+            # 如果大地回来，低于60层就不检查状态
+            if (self.layers <= 60) and self.useEarthGate > 0:
                 return True
             StatusDetail: dict = fightUtils.checkGumballsStatusV2(context)
             CurrentHP = float(StatusDetail["当前生命值"])
@@ -147,17 +151,23 @@ class Mars101(CustomAction):
                 if self.layers <= 60:
                     fightUtils.cast_magic_special("生命颂歌", context)
                 while HPStatus < 0.8:
-                    if not fightUtils.cast_magic("光", "神恩术", context):
-                        if not fightUtils.cast_magic("水", "治疗术", context):
-                            if not fightUtils.cast_magic("水", "治愈术", context):
+                    if not fightUtils.cast_magic("水", "治疗术", context):
+                        if not fightUtils.cast_magic("水", "治愈术", context):
+                            if not fightUtils.cast_magic("光", "神恩术", context):
                                 logger.info("没有任何治疗方法了= =")
                                 break
                     context.run_task("Fight_ReturnMainWindow")
                     StatusDetail: dict = fightUtils.checkGumballsStatusV2(context)
-                    CurrentHP = float(StatusDetail["当前生命值"])
+                    AfterHP = float(StatusDetail["当前生命值"])
                     MaxHp = float(StatusDetail["最大生命值"])
-                    HPStatus = CurrentHP / MaxHp
-                    logger.info(f"current hp is {CurrentHP}, HPStatus is {HPStatus}")
+                    HPStatus = AfterHP / MaxHp
+                    logger.info(f"current hp is {AfterHP}, HPStatus is {HPStatus}")
+                    if AfterHP == CurrentHP:
+                        logger.info("当前生命值没有变化，使用痊愈术或者神恩术")
+                        if not fightUtils.cast_magic("水", "治愈术", context):
+                            if not fightUtils.cast_magic("光", "神恩术", context):
+                                logger.info("没有任何治疗方法了= =")
+                                break
             else:
                 logger.info("当前生命值大于80%，不使用治疗")
 
@@ -222,19 +232,20 @@ class Mars101(CustomAction):
             fightUtils.cast_magic_special("生命颂歌", context)
 
             actions = []
-            if self.layers <= 60:
-                actions = [
-                    lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
-                    lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
-                    lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
-                ]
-            elif self.layers >= 70 and self.layers <= 90:
+            if self.layers == 60 and self.useEarthGate == 0:
+                logger.info("59层出现拉绳子, 无大地到达60层")
                 actions = [
                     lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
                     lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
                     lambda: fightUtils.cast_magic("水", "冰锥术", context),
                     lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
                     lambda: context.tasker.controller.post_click(boss_x, boss_y).wait(),
+                ]
+            elif self.layers <= 110:
+                actions = [
+                    lambda: fightUtils.cast_magic(
+                        "水", "冰锥术", context, (boss_x, boss_y)
+                    )
                 ]
             elif self.layers >= 100 and self.layers <= 120:
                 actions = [
@@ -269,6 +280,10 @@ class Mars101(CustomAction):
                 if fightUtils.cast_magic_special("泰坦之足", context):
                     self.isGetTitanFoot = True
                     # 关闭泰坦
+            if self.isGetMagicAssist == False:
+                if fightUtils.cast_magic_special("魔法助手", context):
+                    self.isGetMagicAssist = True
+                    # 关闭魔法助手
             context.run_task("Fight_OpenedDoor")
         return True
 
@@ -305,7 +320,7 @@ class Mars101(CustomAction):
 
     def handle_preLayers_event(self, context: Context):
         self.handle_android_skill_event(context)
-        self.Check_DefaultEquipment(context)
+        # self.Check_DefaultEquipment(context)
         return True
 
     def handle_perfect_event(self, context: Context):
@@ -449,6 +464,8 @@ class Mars101(CustomAction):
             return True
 
         if normalReward and context.run_recognition("Mars_Reward", image):
+            logger.debug("再次清层")
+            context.run_task("Mars_Fight_ClearCurrentLayer")
             logger.info("触发Mars奖励事件")
             mars_reward_detail = context.run_task("Mars_Reward")
             if mars_reward_detail.nodes:
@@ -490,11 +507,9 @@ class Mars101(CustomAction):
 
     @timing_decorator
     def handle_MarsStele_event(self, context: Context, image):
-        if context.run_recognition("Mars_Stele", image):
+        if self.layers % 2 == 1 and context.run_recognition("Mars_Stele", image):
             logger.info("触发Mars斩断事件")
             context.run_task("Mars_Stele")
-            context.run_task("Mars_Fight_ClearCurrentLayer")
-            time.sleep(1)
             return True
         return False
 
@@ -520,12 +535,16 @@ class Mars101(CustomAction):
                 if fightUtils.cast_magic_special("泰坦之足", context):
                     self.isGetTitanFoot = True
                     # 关闭泰坦
+            if self.isGetMagicAssist == False:
+                if fightUtils.cast_magic_special("魔法助手", context):
+                    self.isGetMagicAssist = True
+                    # 关闭魔法助手
             return True
         return False
 
     @timing_decorator
     def handle_SpecialLayer_event(self, context: Context, image):
-        # 不放柱子，不打裸男
+        # 不放柱子，用冰锥打裸男
         if (
             (30 <= self.layers + 1 <= 100)
             and ((self.layers + 1) % 10 == 0)
@@ -539,7 +558,35 @@ class Mars101(CustomAction):
                 return False
             context.run_task("Mars_Shower")
             context.run_task("Mars_EatBread")
+            fightUtils.cast_magic(
+                "暗",
+                "死亡波纹",
+                context,
+            )
+            if self.layers <= 59:
+                times = 1
+            elif 60 < self.layers < 80:
+                times = 2
+            else:
+                times = 3
+            for _ in range(times):
+                fightUtils.cast_magic(
+                    "水",
+                    "冰锥术",
+                    context,
+                    (special_layer_monster_1_x, special_layer_monster_1_y),
+                )
+            for _ in range(times):
+                fightUtils.cast_magic(
+                    "水",
+                    "冰锥术",
+                    context,
+                    (special_layer_monster_2_x, special_layer_monster_2_y),
+                )
+
             context.run_task("Fight_ReturnMainWindow")
+            # 检查一下状态
+            self.Check_DefaultStatus(context)
             self.leaveSpecialLayer(context)
 
             return True
@@ -550,8 +597,9 @@ class Mars101(CustomAction):
         context.run_task("Fight_PickUpAll_Emptyfloor")
         self.isAutoPickup = True
 
+    @timing_decorator
     def handle_postLayers_event(self, context: Context):
-        self.handle_perfect_event(context)
+        # self.handle_perfect_event(context)
         fightUtils.handle_dragon_event("马尔斯", context)
         self.Check_DefaultStatus(context)
 
@@ -568,7 +616,7 @@ class Mars101(CustomAction):
             # 如果卡剧情(离开),则返回False, 重新清理该层
             return False
         if self.handle_EarthGate_event(context):
-            # 大地成功,需要回到战前准备开始请层，大地失败则继续往下走
+            # 大地成功,需要回到战前准备开始清理该层，大地失败则继续往下走
             return False
         if self.layers >= self.target_leave_layer_para - 2 and context.run_recognition(
             "Mars_GotoSpecialLayer",
