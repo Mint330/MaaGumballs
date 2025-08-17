@@ -615,10 +615,17 @@ class Mars101(CustomAction):
         if not self.handle_SpecialLayer_event(context, image):
             # 如果卡剧情(离开),则返回False, 重新清理该层
             return False
+        # 检测隐藏冈布奥
+        image = context.tasker.controller.post_screencap().wait().get()
+        self.handle_MarsBody_event(context, image)
         if self.handle_EarthGate_event(context):
             # 大地成功,需要回到战前准备开始清理该层，大地失败则继续往下走
             return False
-        if self.layers >= self.target_leave_layer_para - 2 and context.run_recognition(
+        if (
+            (self.layers >= self.target_leave_layer_para - 2)
+            # 如果到了99层，依然只用了一次大地那么就不要再往上爬了
+            or (101 >= self.layers >= 97 and self.useEarthGate < 2)
+        ) and context.run_recognition(
             "Mars_GotoSpecialLayer",
             context.tasker.controller.post_screencap().wait().get(),
         ):
