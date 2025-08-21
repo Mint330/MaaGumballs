@@ -270,7 +270,7 @@ class Mars101(CustomAction):
             actions = []
             if self.target_magicgumball_para == "波塞冬":
                 if self.layers == 60 and self.useEarthGate == 0:
-                    logger.info("59层出现拉绳子, 无大地到达60层")
+                    logger.info("波塞冬阵容,59层出现拉绳子,无大地到达60层")
                     actions = [
                         lambda: context.tasker.controller.post_click(
                             boss_x, boss_y
@@ -310,7 +310,7 @@ class Mars101(CustomAction):
                         ).wait(),
                     ]
             else:
-                if self.layers <= 60:
+                if self.layers <= 80:
                     actions = [
                         lambda: context.tasker.controller.post_click(
                             boss_x, boss_y
@@ -322,23 +322,7 @@ class Mars101(CustomAction):
                             boss_x, boss_y
                         ).wait(),
                     ]
-                elif self.layers >= 70 and self.layers <= 90:
-                    actions = [
-                        lambda: context.tasker.controller.post_click(
-                            boss_x, boss_y
-                        ).wait(),
-                        lambda: context.tasker.controller.post_click(
-                            boss_x, boss_y
-                        ).wait(),
-                        lambda: fightUtils.cast_magic("水", "冰锥术", context),
-                        lambda: context.tasker.controller.post_click(
-                            boss_x, boss_y
-                        ).wait(),
-                        lambda: context.tasker.controller.post_click(
-                            boss_x, boss_y
-                        ).wait(),
-                    ]
-                elif self.layers >= 100 and self.layers <= 120:
+                elif self.layers >= 90 and self.layers <= 120:
                     actions = [
                         lambda: context.tasker.controller.post_click(
                             boss_x, boss_y
@@ -646,10 +630,7 @@ class Mars101(CustomAction):
                 if fightUtils.cast_magic_special("泰坦之足", context):
                     self.isGetTitanFoot = True
                     # 关闭泰坦
-            if (
-                self.isGetMagicAssist == False
-                and self.target_magicgumball_para == "波塞冬"
-            ):
+            if self.isGetMagicAssist == False:
                 if fightUtils.cast_magic_special("魔法助手", context):
                     self.isGetMagicAssist = True
                     # 关闭魔法助手
