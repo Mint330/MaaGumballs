@@ -355,7 +355,7 @@ class FightProcessor:
             return True
         return False
 
-    def clearCurrentLayer(self, context: Context):
+    def clearCurrentLayer(self, context: Context, isclearall: bool = False):
         # 初始化
         fail_check_grid_cnt = 0
         fail_check_monster_cnt = 0
@@ -381,6 +381,8 @@ class FightProcessor:
             # 检测grid还能不能找到, 累计几次找不到则退出
             if not self.detect_and_click_grid(context, img):
                 fail_check_grid_cnt += 1
+            else:
+                fail_check_grid_cnt = 0
 
             # 检测怪物并进行攻击
             if not self.checkMonster(context):
@@ -388,8 +390,15 @@ class FightProcessor:
             else:
                 fail_check_monster_cnt = 0
 
+            if isclearall:
+                # 需要地板怪物全清
+                if (
+                    fail_check_monster_cnt >= self.max_monster_loop_fail
+                    and fail_check_grid_cnt >= self.max_grid_loop_fail
+                ):
+                    break
             # 如果提前清理完该层，那么不需要继续等待，可以提前退出
-            if (
+            elif (
                 fail_check_monster_cnt >= self.max_monster_loop_fail
                 or fail_check_grid_cnt >= self.max_grid_loop_fail
             ):

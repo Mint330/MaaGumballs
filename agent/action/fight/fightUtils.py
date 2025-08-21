@@ -309,13 +309,14 @@ def title_check(titleType: str, context: Context):
             },
         ):
             isSuccess = True
+            context.run_task("Fight_ReturnMainWindow")
             break
 
         else:
             context.tasker.controller.post_click(433, 1037).wait()
             checkcount += 1
-            time.sleep(0.5)
-        context.run_task("Fight_ReturnMainWindow")
+            time.sleep(1)
+    context.run_task("Fight_ReturnMainWindow")
     return isSuccess
 
 
