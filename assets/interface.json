@@ -242,9 +242,11 @@
             "repeat_count": 1,
             "option": [
                 "自动肉鸽时使用钻石购买体力",
+                "占星称号是否满级",
                 "目标出图楼层",
                 "目标大地数量",
-                "开启自动拾取"
+                "开启自动拾取",
+                "魔法系冈布奥选择"
             ],
             "pipeline_override": {
                 "Select_WorldTree_InputBox_Text": {
@@ -258,9 +260,6 @@
                 },
                 "select_InputBox_Text1": {
                     "input_text": "太阳冈布奥"
-                },
-                "select_InputBox_Text2": {
-                    "input_text": "天启者"
                 }
             },
             "doc": [
@@ -719,21 +718,49 @@
                 }
             ]
         },
-        "目标出图楼层": {
+        "魔法系冈布奥选择": {
             "cases": [
                 {
-                    "name": "89",
+                    "name": "天启者",
                     "pipeline_override": {
-                        "Mars_Target_Layer_Setting": {
-                            "expected": "89"
+                        "select_InputBox_Text2": {
+                            "input_text": "天启者"
                         }
                     }
                 },
+                {
+                    "name": "波塞冬",
+                    "pipeline_override": {
+                        "select_InputBox_Text2": {
+                            "input_text": "波塞冬"
+                        }
+                    }
+                }
+            ]
+        },
+        "目标出图楼层": {
+            "cases": [
                 {
                     "name": "99",
                     "pipeline_override": {
                         "Mars_Target_Layer_Setting": {
                             "expected": "99"
+                        }
+                    }
+                },
+                {
+                    "name": "109",
+                    "pipeline_override": {
+                        "Mars_Target_Layer_Setting": {
+                            "expected": "109"
+                        }
+                    }
+                },
+                {
+                    "name": "119",
+                    "pipeline_override": {
+                        "Mars_Target_Layer_Setting": {
+                            "expected": "119"
                         }
                     }
                 }
@@ -754,6 +781,26 @@
                     "pipeline_override": {
                         "Mars_Target_Earthgate_Setting": {
                             "expected": "2"
+                        }
+                    }
+                }
+            ]
+        },
+        "占星称号是否满级": {
+            "cases": [
+                {
+                    "name": "no",
+                    "pipeline_override": {
+                        "Mars_Astrological_Title_Setting": {
+                            "expected": "false"
+                        }
+                    }
+                },
+                {
+                    "name": "yes",
+                    "pipeline_override": {
+                        "Mars_Astrological_Title_Setting": {
+                            "expected": "true"
                         }
                     }
                 }
@@ -1058,7 +1105,7 @@
                 }
             ]
         },
-        "是否清理星球小怪":{
+        "是否清理星球小怪": {
             "cases": [
                 {
                     "name": "no",
@@ -1075,11 +1122,10 @@
                             "enabled": true
                         }
                     }
-
                 }
             ]
         },
-        "出战舰队数量":{
+        "出战舰队数量": {
             "default_case": "1",
             "cases": [
                 {
