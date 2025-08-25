@@ -410,7 +410,7 @@ class Mars101(CustomAction):
         self.handle_android_skill_event(context)
         self.handle_UseMagicAssist_event(context)
         # 添加开场检查血量，防止意外
-        if self.layers > self.target_leave_layer_para - 10:
+        if (self.layers > self.target_leave_layer_para - 10) and self.layers % 10 != 0:
             self.Check_DefaultStatus(context)
             for _ in range(2):
                 fightUtils.cast_magic("水", "寒冰护盾", context)
